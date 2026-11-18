@@ -1,6 +1,5 @@
 package com.example.logistics;
 
-import com.example.logistics.account.AppUserRepository;
 import com.example.logistics.dispatch.TripRepository;
 import com.example.logistics.hub.Hub;
 import com.example.logistics.hub.HubRepository;
@@ -19,18 +18,15 @@ public class TestData {
     private final TripRepository trips;
     private final TrackingEventRepository events;
     private final MerchantRepository merchants;
-    private final AppUserRepository users;
 
     public TestData(HubRepository hubs, VehicleRepository vehicles, ShipmentRepository shipments,
-                    TripRepository trips, TrackingEventRepository events, MerchantRepository merchants,
-                    AppUserRepository users) {
+                    TripRepository trips, TrackingEventRepository events, MerchantRepository merchants) {
         this.hubs = hubs;
         this.vehicles = vehicles;
         this.shipments = shipments;
         this.trips = trips;
         this.events = events;
         this.merchants = merchants;
-        this.users = users;
     }
 
     public void reset() {
@@ -38,7 +34,6 @@ public class TestData {
         shipments.deleteAllInBatch();
         trips.deleteAllInBatch();
         vehicles.deleteAllInBatch();
-        users.deleteNonAdmins();
         merchants.deleteAllInBatch();
         hubs.deleteAllInBatch();
     }

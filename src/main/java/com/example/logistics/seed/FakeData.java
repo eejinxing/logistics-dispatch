@@ -2,7 +2,7 @@ package com.example.logistics.seed;
 
 import com.example.logistics.hub.Hub;
 import com.example.logistics.merchant.Merchant;
-import com.example.logistics.shipment.MerchantShipmentRequest;
+import com.example.logistics.shipment.CreateShipmentRequest;
 import com.example.logistics.shipment.Priority;
 
 import java.util.List;
@@ -30,10 +30,6 @@ public final class FakeData {
             "Chan Ah Kow", "Hamidah Yusof", "Ravi Chandran", "Teoh Seng Huat", "Amirul Hakim", "Ng Pei Shan",
             "Daniel Lau", "Faridah Ali", "Suresh Nair", "Kamal Ariffin", "Foo Yong Sheng", "Aisyah Rahman");
 
-    public static final String DEMO_CUSTOMER_NAME = "Tan Mei Ling";
-    public static final String DEMO_CUSTOMER_PHONE = "012-345 6789";
-    public static final String DEMO_MERCHANT = "Maju Jaya Trading";
-
     private FakeData() {
     }
 
@@ -42,13 +38,6 @@ public final class FakeData {
     }
 
     public static Merchant pickMerchant(List<Merchant> merchants, RandomGenerator rnd) {
-        if (rnd.nextDouble() < 0.2) {
-            for (Merchant m : merchants) {
-                if (DEMO_MERCHANT.equals(m.getName())) {
-                    return m;
-                }
-            }
-        }
         return pick(merchants, rnd);
     }
 
@@ -56,14 +45,11 @@ public final class FakeData {
         return rnd.nextDouble() < 0.75 ? merchant.getDefaultHub() : weightedHub(hubs, null, rnd);
     }
 
-    public static MerchantShipmentRequest randomOrder(Merchant merchant, List<Hub> hubs, RandomGenerator rnd,
-                                                      double demoCustomerRate) {
+    public static CreateShipmentRequest randomOrder(Merchant merchant, List<Hub> hubs, RandomGenerator rnd) {
         Hub origin = originFor(merchant, hubs, rnd);
         Hub destination = weightedHub(hubs, origin, rnd);
-        boolean demo = rnd.nextDouble() < demoCustomerRate;
-        return new MerchantShipmentRequest(origin.getId(), destination.getId(),
-                demo ? DEMO_CUSTOMER_NAME : person(rnd), demo ? DEMO_CUSTOMER_PHONE : phone(rnd),
-                address(destination, rnd), weightKg(rnd), priority(rnd));
+        return new CreateShipmentRequest(origin.getId(), destination.getId(), null, person(rnd), phone(rnd),
+                address(destination, rnd), weightKg(rnd), priority(rnd), merchant.getId());
     }
 
     public static String person(RandomGenerator rnd) {

@@ -1,14 +1,12 @@
 package com.example.logistics.seed;
 
-import com.example.logistics.account.AppUser;
-import com.example.logistics.account.AppUserRepository;
-import com.example.logistics.account.Role;
 import com.example.logistics.merchant.Merchant;
 import com.example.logistics.merchant.MerchantRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import com.example.logistics.common.CodeGenerator;
 import com.example.logistics.config.SeedProperties;
 import com.example.logistics.config.SimulationProperties;
+import com.example.logistics.dispatch.Trip;
+import com.example.logistics.dispatch.TripRepository;
 import com.example.logistics.hub.Hub;
 import com.example.logistics.hub.HubRepository;
 import com.example.logistics.hub.Landmass;
@@ -21,6 +19,7 @@ import com.example.logistics.shipment.ShipmentJournal;
 import com.example.logistics.shipment.ShipmentRepository;
 import com.example.logistics.shipment.ShipmentStatus;
 import com.example.logistics.simulation.SimulationClock;
+import com.example.logistics.vehicle.DriverAssignment;
 import com.example.logistics.vehicle.Vehicle;
 import com.example.logistics.vehicle.VehicleRepository;
 import com.example.logistics.vehicle.VehicleType;
@@ -34,18 +33,25 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 @Component
 @ConditionalOnProperty(prefix = "app.seed", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class DataSeeder implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
     private static final List<String> EXCEPTION_REASONS = List.of("Recipient unavailable", "Incomplete address", "Recipient refused delivery", "Damaged packaging");
+    private static final List<String> PORTRAIT_DRIVERS = List.of(
+            "Ahmad Faizal", "Nurul Huda", "Tan Wei Ming", "Kavitha Devi",
+            "Chong Mei Ling", "Mohd Hafiz", "Goh Siew Lan", "Lim Chee Keong",
+            "Muthu Raj", "Aisyah Rahman", "Wong Kah Leong", "Farid Ismail",
+            "Ng Pei Shan", "Hairul Anuar", "Siva Kumar", "Faridah Ali");
 
     private static final Map<String, String> PLATE_PREFIX = Map.ofEntries(
             Map.entry("KUL", "W"), Map.entry("PEN", "P"), Map.entry("JHB", "J"), Map.entry("IPH", "A"),
@@ -56,6 +62,7 @@ public class DataSeeder implements ApplicationRunner {
     private final SimulationProperties sim;
     private final HubRepository hubs;
     private final VehicleRepository vehicles;
+    private final TripRepository trips;
     private final ShipmentRepository shipments;
     private final ShipmentJournal journal;
     private final PricingService pricing;
@@ -64,21 +71,19 @@ public class DataSeeder implements ApplicationRunner {
     private final TransactionTemplate tx;
 
     private final MerchantRepository merchants;
-    private final AppUserRepository users;
-    private final PasswordEncoder encoder;
     private List<Merchant> merchantList = List.of();
 
     public DataSeeder(SeedProperties props, SimulationProperties sim, HubRepository hubs, VehicleRepository vehicles,
+                      TripRepository trips,
                       ShipmentRepository shipments, ShipmentJournal journal, PricingService pricing,
                       CodeGenerator codes, SimulationClock clock, TransactionTemplate tx,
-                      MerchantRepository merchants, AppUserRepository users, PasswordEncoder encoder) {
+                      MerchantRepository merchants) {
         this.merchants = merchants;
-        this.users = users;
-        this.encoder = encoder;
         this.props = props;
         this.sim = sim;
         this.hubs = hubs;
         this.vehicles = vehicles;
+        this.trips = trips;
         this.shipments = shipments;
         this.journal = journal;
         this.pricing = pricing;
@@ -97,7 +102,6 @@ public class DataSeeder implements ApplicationRunner {
         log.info("Seeded demo data in {} ms: {} hubs, {} vehicles, {} merchants, {} shipments",
                 System.currentTimeMillis() - started, hubs.count(), vehicles.count(), merchants.count(),
                 shipments.count());
-        log.info("Demo logins: merchant / customer (password app.seed.demo-password)");
     }
 
     private void seed(Random rnd) {
@@ -105,7 +109,6 @@ public class DataSeeder implements ApplicationRunner {
         List<Vehicle> fleet = seedFleet(hubList, rnd);
         Instant now = clock.instant();
         merchantList = seedMerchants(hubList, rnd, now);
-        seedDemoAccounts(now);
         int made = 0;
         int attempts = 0;
         while (made < props.historyShipments() && attempts++ < props.historyShipments() * 4) {
@@ -123,27 +126,11 @@ public class DataSeeder implements ApplicationRunner {
     private List<Merchant> seedMerchants(List<Hub> hubList, Random rnd, Instant now) {
         List<Merchant> list = new ArrayList<>();
         for (String name : FakeData.companies()) {
-            Hub home = name.equals(FakeData.DEMO_MERCHANT)
-                    ? hubList.getFirst()
-                    : FakeData.weightedHub(hubList, null, rnd);
+            Hub home = FakeData.weightedHub(hubList, null, rnd);
             list.add(new Merchant(codes.nextMerchantCode(), name, FakeData.person(rnd), FakeData.phone(rnd), home,
                     now.minus(Duration.ofDays(rnd.nextInt(30, 400)))));
         }
         return merchants.saveAll(list);
-    }
-
-    private void seedDemoAccounts(Instant now) {
-        Merchant demoMerchant = merchantList.stream().filter(m -> m.getName().equals(FakeData.DEMO_MERCHANT))
-                .findFirst().orElse(merchantList.getFirst());
-        String password = encoder.encode(props.demoPassword());
-        if (!users.existsByUsernameIgnoreCase("merchant")) {
-            users.save(new AppUser("merchant", password, Role.MERCHANT, demoMerchant.getContactName(), demoMerchant,
-                    demoMerchant.getPhone(), now));
-        }
-        if (!users.existsByUsernameIgnoreCase("customer")) {
-            users.save(new AppUser("customer", password, Role.CUSTOMER, FakeData.DEMO_CUSTOMER_NAME, null,
-                    FakeData.DEMO_CUSTOMER_PHONE, now));
-        }
     }
 
     private List<Hub> seedHubs() {
@@ -181,6 +168,7 @@ public class DataSeeder implements ApplicationRunner {
 
         Set<String> plates = new HashSet<>();
         List<Vehicle> fleet = new ArrayList<>();
+        LocalDate today = clock.instant().atZone(clock.getZone()).toLocalDate();
         int driverIndex = 0;
         char airSuffix = 'A';
         for (Hub hub : hubList) {
@@ -193,8 +181,18 @@ public class DataSeeder implements ApplicationRunner {
                         plate = plate(PLATE_PREFIX.get(hub.getCode()), rnd);
                     } while (!plates.add(plate));
                 }
-                String driver = (type.isAir() ? "Capt. " : "") + FakeData.driver(driverIndex++);
-                fleet.add(new Vehicle(plate, type, type.defaultCapacityKg(), driver, FakeData.phone(rnd), hub));
+                int index = driverIndex++;
+                int portrait = index % PORTRAIT_DRIVERS.size();
+                String driver = (type.isAir() ? "Capt. " : "") + PORTRAIT_DRIVERS.get(portrait);
+                Vehicle vehicle = new Vehicle(plate, type, type.defaultCapacityKg(), driver, FakeData.phone(rnd), hub);
+                int relief = vehicle.isHeavyDuty() ? 5 + index % 2 : index % 3;
+                vehicle.setDriverRoster(portrait, IntStream.rangeClosed(1, relief)
+                        .map(i -> (portrait + i * 3) % PORTRAIT_DRIVERS.size())
+                        .mapToObj(i -> new DriverAssignment(PORTRAIT_DRIVERS.get(i), i))
+                        .toList());
+                vehicle.setFleetDetails(vehicle.isHeavyDuty() && index % 3 != 0,
+                        today.plusDays(3L + index % 24), type.isAir() ? null : 4 + index % 7);
+                fleet.add(vehicle);
             }
         }
         fleet.stream().filter(v -> v.getHub().getCode().equals("PEN") && v.getType() == VehicleType.VAN)
@@ -213,13 +211,11 @@ public class DataSeeder implements ApplicationRunner {
     private record Order(Merchant merchant, Hub origin, Hub destination, String receiver, String phone) {
     }
 
-    private Order pickOrder(List<Hub> hubList, Random rnd, double demoCustomerRate) {
+    private Order pickOrder(List<Hub> hubList, Random rnd) {
         Merchant merchant = FakeData.pickMerchant(merchantList, rnd);
         Hub origin = FakeData.originFor(merchant, hubList, rnd);
         Hub destination = FakeData.weightedHub(hubList, origin, rnd);
-        boolean demo = rnd.nextDouble() < demoCustomerRate;
-        return new Order(merchant, origin, destination, demo ? FakeData.DEMO_CUSTOMER_NAME : FakeData.person(rnd),
-                demo ? FakeData.DEMO_CUSTOMER_PHONE : FakeData.phone(rnd));
+        return new Order(merchant, origin, destination, FakeData.person(rnd), FakeData.phone(rnd));
     }
 
     private Shipment save(Order order, Random rnd, Instant createdAt) {
@@ -233,14 +229,14 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     private Shipment newShipment(List<Hub> hubList, Random rnd, Instant createdAt) {
-        return save(pickOrder(hubList, rnd, 0.1), rnd, createdAt);
+        return save(pickOrder(hubList, rnd), rnd, createdAt);
     }
 
     private boolean seedHistoric(List<Hub> hubList, List<Vehicle> fleet, Random rnd, Instant now) {
         long windowMinutes = Duration.ofDays(Math.max(1, props.historyDays())).toMinutes();
         Instant createdAt = now.minus(Duration.ofMinutes(rnd.nextLong(6 * 60, windowMinutes)));
 
-        Order order = pickOrder(hubList, rnd, 0.035);
+        Order order = pickOrder(hubList, rnd);
         Hub origin = order.origin();
         Hub destination = order.destination();
         boolean air = Routes.requiresAir(origin, destination);
@@ -271,12 +267,20 @@ public class DataSeeder implements ApplicationRunner {
             return true;
         }
 
-        Vehicle vehicle = fleet.stream()
-                .filter(v -> Routes.canServe(v.getType(), origin, destination))
-                .filter(v -> v.getHub().sameAs(origin) || air)
-                .findAny()
-                .orElse(fleet.getFirst());
-        s.moveTo(ShipmentStatus.ASSIGNED, assigned);
+        List<Vehicle> eligible = fleet.stream()
+                .filter(v -> Routes.canServe(v.getType(), origin, destination) && v.getCapacityKg() >= s.getWeightKg())
+                .filter(v -> air || v.getHub().getLandmass() == origin.getLandmass())
+                .toList();
+        List<Vehicle> local = eligible.stream().filter(v -> v.getHub().sameAs(origin)).toList();
+        List<Vehicle> available = local.isEmpty() ? eligible : local;
+        Vehicle vehicle = available.get(Math.floorMod(s.getId(), available.size()));
+        Trip trip = new Trip(codes.nextTripCode(), vehicle, origin, destination, false, s.getWeightKg(), km,
+                assigned, departed, arrived);
+        trip.depart();
+        trip.arrive(arrived);
+        trips.save(trip);
+        s.assignTo(trip, assigned);
+        trip.getShipments().add(s);
         journal.recordQuietly(s, origin.getName(), "Loaded · " + vehicle.getPlateNo() + " (" + vehicle.getType().label() + ")", assigned);
         s.moveTo(ShipmentStatus.IN_TRANSIT, departed);
         journal.recordQuietly(s, origin.getName(), "Departed " + origin.getCode() + " for " + destination.getCode(), departed);
@@ -299,7 +303,7 @@ public class DataSeeder implements ApplicationRunner {
             return true;
         }
         s.moveTo(ShipmentStatus.DELIVERED, delivered);
-            journal.recordQuietly(s, destination.getName(), "Delivered to " + s.getReceiverName(), delivered);
+        journal.recordQuietly(s, destination.getName(), "Delivered to " + s.getReceiverName(), delivered);
         return true;
     }
 }

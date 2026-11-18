@@ -1,12 +1,15 @@
 import { get, post } from '../api.js';
+import { DispatchMap } from '../dispatch-map.js';
 import {
-  $, ago, badge, dirChip, throttle, esc, fmtHM, fmtKg, fmtNum, fmtTime, lane, toast
+  $, badge, throttle, esc, fmtDuration, fmtHM, fmtKg, fmtNum, fmtTime, hubOptions, lane, toast
 } from '../ui.js';
 import { openShipment } from './shipments.js';
 
 let s = null;
 
 const laneKey = (l) => `${l.origin.id}>${l.destination.id}`;
+const itemKey = (item) => item.status ? String(item.id) : laneKey(item);
+const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4 4"/></svg>';
 
 function haversine(a, b) {
   const R = 6371;
@@ -17,65 +20,168 @@ function haversine(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-async function loadAll() {
-  if (!s) return;
-  const token = s;
+async function loadAll(current = s) {
+  if (!current || s !== current) return;
+  const version = ++current.version;
   const [lanes, vehicles, trips] = await Promise.all([get('/api/dispatch/lanes'), get('/api/vehicles'), get('/api/trips')]);
-  if (s !== token) return;
-  s.lanes = lanes;
-  s.vehicles = vehicles;
-  s.trips = trips;
-  renderLanes();
-  const sig = pickSignature();
-  if (sig !== s.pickSig) renderPick();
-  renderTrips();
+  if (s !== current || version !== current.version) return;
+  Object.assign(current, { lanes, vehicles, trips });
+  renderWorkspace(current);
 }
 
 function pickSignature() {
   const l = s.lanes.find((x) => laneKey(x) === s.selected);
   if (!l) return 'none';
   const ids = l.shipments.map((x) => x.id).join(',');
-  const fleet = s.vehicles.filter((v) => v.hub.id === l.origin.id).map((v) => `${v.id}:${v.status}`).join(',');
+  const fleet = s.vehicles.map(v => `${v.id}:${v.status}:${v.hub.id}`).join(',');
   return `${s.selected}|${ids}|${fleet}`;
 }
 
-function renderLanes() {
+function matchingItems(current) {
+  const hub = $('#dispatch-hub').value;
+  const term = $('#dispatch-search').value.trim().toLowerCase();
+  const items = current.view === 'waiting' ? current.lanes : current.trips;
+  return items.filter(item => {
+    const name = `${item.origin.code} ${item.origin.name} ${item.destination.code} ${item.destination.name} ${item.directionLabel} ${item.code ?? ''} ${item.plateNo ?? ''}`;
+    return (!hub || String(item.origin.id) === hub) && (!term || name.toLowerCase().includes(term));
+  });
+}
+
+function itemStatus(item) {
+  const label = item.status ? item.statusLabel : item.overdue ? 'Ready to dispatch' : 'Queued';
+  const highlighted = item.status === 'IN_TRANSIT' || item.overdue;
+  return `<span class="dispatch-status${highlighted ? ' is-highlighted' : ''}">${esc(label)}</span>`;
+}
+
+function rowContent(item) {
+  const route = lane(item.origin, item.destination);
+  if (item.status) {
+    return `<span class="dispatch-row-top"><strong>${esc(item.code)}</strong>${itemStatus(item)}</span>
+      <span class="dispatch-row-caption">${route}<span>${esc(item.plateNo)}</span></span>
+      <span class="dispatch-row-meta"><span>ETA ${fmtTime(item.arriveAt)}</span><span>${item.relocation ? 'Empty relocation' : fmtKg(item.loadKg)}</span></span>`;
+  }
+  return `<span class="dispatch-row-top"><strong>${route}</strong>${itemStatus(item)}</span>
+    <span class="dispatch-row-caption">${esc(item.origin.name)} → ${esc(item.destination.name)}</span>
+    <span class="dispatch-row-meta"><span>${fmtNum(item.count)} ${item.count === 1 ? 'shipment' : 'shipments'} · ${fmtKg(item.totalKg)}</span>
+      <span>${item.air ? 'Air freight' : esc(item.directionLabel)}</span></span>`;
+}
+
+function renderList(current, items) {
   const list = $('#lane-list');
-  const now = s.ctx.simNow();
-  const total = s.lanes.reduce((n, l) => n + l.count, 0);
-  $('#lane-sum').textContent = `${s.lanes.length} routes · ${total} shipments`;
-  if (!s.lanes.length) {
-    list.innerHTML = '<div class="empty">No shipments awaiting dispatch 👍</div>';
+  const focused = list.contains(document.activeElement) ? document.activeElement : null;
+  $('#lane-sum').textContent = current.view === 'waiting'
+    ? `${fmtNum(items.length)} routes · ${fmtNum(items.reduce((total, item) => total + item.count, 0))} shipments`
+    : `${fmtNum(items.filter(item => item.status === 'IN_TRANSIT').length)} in transit · ${fmtNum(items.filter(item => item.status === 'LOADING').length)} loading`;
+  if (!items.length) {
+    list.innerHTML = `<p class="empty">${current.view === 'waiting' ? 'No waiting routes match these filters.' : 'No active trips match these filters.'}</p>`;
+    if (focused) $('#dispatch-search').focus();
     return;
   }
-  list.innerHTML = s.lanes.map((l) => `
-    <button type="button" class="lane-card${laneKey(l) === s.selected ? ' selected' : ''}" data-key="${laneKey(l)}">
-      <div class="row">${lane(l.origin, l.destination)} ${dirChip(l.direction, l.directionLabel)}
-        ${l.air ? '<span class="badge air plain">Air freight</span>' : ''}
-        ${l.overdue ? '<span class="badge overdue">Ready to dispatch</span>' : ''}</div>
-      <div class="row meta"><span class="num">${l.count} shipments · ${fmtKg(l.totalKg)}</span>${l.expressCount ? `<span class="badge express plain">Express ${l.expressCount}</span>` : ''}
-        ${l.transferCount ? `<span class="badge transfer plain">Transfer ${l.transferCount}</span>` : ''}
-          <span class="muted">Queued ${ago(l.waitingSince, now)}</span></div>
-    </button>`).join('');
-  list.querySelectorAll('.lane-card').forEach((b) => b.addEventListener('click', () => {
-    s.selected = b.dataset.key;
-    s.checked = null;
-    s.vehicleId = null;
-    list.querySelectorAll('.lane-card').forEach((x) => x.classList.toggle('selected', x === b));
-    renderPick();
-  }));
+  $('.empty', list)?.remove();
+  const keys = new Set(items.map(itemKey));
+  for (const card of [...list.children]) if (!keys.has(card.dataset.key)) card.remove();
+  const existing = new Map([...list.children].map(card => [card.dataset.key, card]));
+  let position = list.firstElementChild;
+  for (const item of items) {
+    const key = itemKey(item);
+    const card = existing.get(key) ?? document.createElement('button');
+    card.type = 'button';
+    card.className = 'dispatch-row';
+    card.dataset.key = key;
+    card.setAttribute('aria-pressed', String(key === current.selected && !current.detailsClosed));
+    card.setAttribute('aria-controls', 'dispatch-detail');
+    const markup = rowContent(item);
+    if (current.cardMarkup.get(card) !== markup) {
+      card.innerHTML = markup;
+      current.cardMarkup.set(card, markup);
+    }
+    if (card !== position) list.insertBefore(card, position);
+    position = card.nextElementSibling;
+  }
+  if (focused && focused !== document.activeElement) (focused.isConnected ? focused : $('#dispatch-search')).focus({ preventScroll: true });
+}
+
+function renderWorkspace(current, { focusRoute = false } = {}) {
+  const items = matchingItems(current);
+  let selected = items.find(item => itemKey(item) === current.selected);
+  if (!selected && !current.detailsClosed) {
+    selected = items[0];
+    current.selected = selected ? itemKey(selected) : null;
+    current.manual = false;
+    current.checked = null;
+    current.vehicleId = null;
+  }
+  for (const tab of current.root.querySelectorAll('[data-view]')) {
+    const waiting = tab.dataset.view === 'waiting';
+    tab.setAttribute('aria-pressed', String(tab.dataset.view === current.view));
+    $('[data-count]', tab).textContent = fmtNum(waiting ? current.lanes.length : current.trips.length);
+  }
+  renderList(current, items);
+  const displayed = current.detailsClosed ? null : selected;
+  current.displayed = displayed;
+  current.map?.setOrigins(items, displayed?.origin.id);
+  const routeKey = displayed ? `${current.view}:${itemKey(displayed)}:${laneKey(displayed)}` : '';
+  if (routeKey !== current.routeKey) {
+    current.routeKey = routeKey;
+    current.map?.showRoute(displayed);
+  }
+  if (focusRoute) current.map?.focusRoute();
+  renderDetail(current, displayed);
+  updateProgress();
+}
+
+function renderDetail(current, item) {
+  const detail = $('#dispatch-detail');
+  detail.hidden = !item;
+  if (!item) return;
+  detail.classList.toggle('is-manual', current.manual);
+  $('#dispatch-detail-title').textContent = current.manual ? 'Manual dispatch' : item.status ? item.code : `${item.origin.code} → ${item.destination.code}`;
+  const summary = $('#dispatch-summary');
+  const pick = $('#pick');
+  summary.hidden = current.manual;
+  pick.hidden = !current.manual;
+  if (current.manual) {
+    if (pickSignature() !== current.pickSig) renderPick();
+    return;
+  }
+  const route = `${esc(item.origin.name)} → ${esc(item.destination.name)}`;
+  const markup = item.status ? `<p class="dispatch-route-name">${route}</p>
+    <dl class="dispatch-facts">
+      <div><dt>Status</dt><dd>${esc(item.statusLabel)}</dd></div>
+      <div><dt>Vehicle</dt><dd>${esc(item.plateNo)}</dd></div>
+      <div><dt>Direction</dt><dd>${esc(item.directionLabel)}</dd></div>
+      <div><dt>Load</dt><dd>${item.relocation ? 'Empty relocation' : `${item.shipmentCount} shipments · ${fmtKg(item.loadKg)}`}</dd></div>
+      <div><dt>Departure</dt><dd>${fmtTime(item.departAt)}</dd></div>
+      <div><dt>ETA</dt><dd>${fmtTime(item.arriveAt)}</dd></div>
+    </dl>
+    <progress id="dispatch-progress" max="100" value="0" aria-label="Trip progress"></progress>
+    <div class="bar-label"><span id="dispatch-trip-pct"></span><span id="dispatch-trip-left"></span></div>
+    ${item.delayReason ? `<p class="dispatch-route-note" role="status">Delay · ${esc(item.delayReason)}</p>` : ''}`
+    : `<p class="dispatch-route-name">${route}</p>
+    <dl class="dispatch-facts">
+      <div><dt>Shipments</dt><dd>${fmtNum(item.count)}</dd></div>
+      <div><dt>Total weight</dt><dd>${fmtKg(item.totalKg)}</dd></div>
+      <div><dt>Direction</dt><dd>${esc(item.directionLabel)}</dd></div>
+      <div><dt>Mode</dt><dd>${item.air ? 'Air freight' : 'Road freight'}</dd></div>
+      ${item.expressCount ? `<div><dt>Express</dt><dd>${fmtNum(item.expressCount)}</dd></div>` : ''}
+      ${item.transferCount ? `<div><dt>Transfers</dt><dd>${fmtNum(item.transferCount)}</dd></div>` : ''}
+    </dl>
+    <p class="dispatch-route-note" id="dispatch-queue-age"></p>
+    <button class="btn primary" type="button" id="show-pick">Assign vehicle</button>`;
+  if (markup !== current.summaryMarkup) {
+    current.summaryMarkup = markup;
+    summary.innerHTML = markup;
+  }
 }
 
 function renderPick() {
+  const current = s;
   const box = $('#pick');
-  s.pickSig = pickSignature();
+  current.pickSig = pickSignature();
   const l = s.lanes.find((x) => laneKey(x) === s.selected);
-  if (!l) {
-    $('#pick-title').textContent = 'Manual dispatch';
-    box.innerHTML = '<div class="empty">← Select a route, choose shipments, and assign a vehicle.</div>';
-    return;
-  }
-  $('#pick-title').innerHTML = `Manual dispatch · ${lane(l.origin, l.destination)}`;
+  if (!l) return;
+  const active = box.contains(document.activeElement) ? document.activeElement : null;
+  const focusSelector = active?.id ? `#${active.id}` : active?.matches('input') ? `input[type="${active.type}"][value="${active.value}"]` : null;
   const ids = new Set(l.shipments.map((x) => x.id));
   if (!s.checked) s.checked = new Set(ids);
   for (const id of [...s.checked]) if (!ids.has(id)) s.checked.delete(id);
@@ -92,8 +198,8 @@ function renderPick() {
       const ok = eligible(v);
       const fill = Math.min(1, selectedKg / v.capacityKg);
       const why = v.status === 'MAINTENANCE' ? 'Under maintenance' : !ok ? (l.air ? 'This route requires a cargo aircraft.' : 'Cargo aircraft serve cross-sea routes.') : '';
-      return `<label class="${v.id === s.vehicleId ? 'on' : ''}${ok ? '' : ' disabled'}" data-vid="${v.id}">
-        <input type="radio" name="vehicle" value="${v.id}" ${ok ? '' : 'disabled'}>
+      return `<label class="${v.id === s.vehicleId ? 'on' : ''}${ok ? '' : ' disabled'}">
+        <input type="radio" name="vehicle" value="${v.id}" ${ok ? '' : 'disabled'} ${v.id === s.vehicleId ? 'checked' : ''}>
         <div><b>${esc(v.plateNo)}</b> <span class="muted">${esc(v.typeLabel)}</span></div>
         <div class="text-2">${esc(v.driverName)}${why ? ` · <span style="color:var(--critical)">${why}</span>` : ''}</div>
         <div class="bar${selectedKg > v.capacityKg ? ' over' : ''}"><span style="width:${(fill * 100).toFixed(1)}%"></span></div>
@@ -114,11 +220,12 @@ function renderPick() {
     suggestions = `<div class="result-box" style="margin-top:10px">No ${l.air ? 'cargo aircraft' : 'road vehicle'} is available at ${esc(l.origin.code)}.
       ${candidates.length ? `Relocate an empty vehicle from a nearby hub:<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">${candidates.map(({ v, km }) => `
         <div style="display:flex;align-items:center;gap:8px"><b>${esc(v.plateNo)}</b><span class="muted">${esc(v.typeLabel)} @ ${esc(v.hub.code)} · About ${fmtNum(km)} km</span>
-        <span style="flex:1"></span><button class="btn small" data-relocate="${v.id}">Relocate to ${esc(l.origin.code)}</button></div>`).join('')}</div>` : 'No vehicles are available nearby. Try again shortly.'}</div>`;
+        <span style="flex:1"></span><button class="btn small" data-relocate="${v.id}" ${current.relocating.has(v.id) ? 'disabled' : ''}>Relocate to ${esc(l.origin.code)}</button></div>`).join('')}</div>` : 'No vehicles are available nearby. Try again shortly.'}</div>`;
   }
 
   box.innerHTML = `
-    <div class="section-title" style="margin-top:0;display:flex;align-items:center;gap:8px">
+    <p class="dispatch-route-name">${esc(l.origin.name)} → ${esc(l.destination.name)}</p>
+    <div class="section-title dispatch-pick-heading">
       <span>Shipments (selected: ${s.checked.size} / ${l.count} shipments · ${fmtKg(selectedKg)})</span><span style="flex:1"></span>
       <button class="btn small ghost" id="check-all">Select all</button><button class="btn small ghost" id="check-none">Clear selection</button></div>
     <div class="pick-list">${l.shipments.map((x) => `
@@ -135,8 +242,9 @@ function renderPick() {
       <span class="text-2" style="font-size:13px">${vehicle ? `${esc(vehicle.plateNo)} · Load ${fmtKg(selectedKg)} / ${fmtNum(vehicle.capacityKg)} kg` : 'Select a vehicle'}
         ${over ? '<b style="color:var(--critical)"> · Over capacity</b>' : ''}</span>
       <span style="flex:1"></span>
-      <button class="btn primary" id="do-dispatch" ${!vehicle || over || !s.checked.size ? 'disabled' : ''}>Dispatch vehicle</button>
+      <button class="btn primary" id="do-dispatch" ${!vehicle || over || !s.checked.size || current.submitting ? 'disabled' : ''}>Dispatch vehicle</button>
     </div>`;
+  if (focusSelector) $(focusSelector, box)?.focus({ preventScroll: true });
 
   box.querySelectorAll('.pick-list input').forEach((c) => c.addEventListener('change', () => {
     const id = Number(c.value);
@@ -145,78 +253,76 @@ function renderPick() {
   }));
   box.querySelectorAll('[data-no]').forEach((a) => a.addEventListener('click', (e) => {
     e.preventDefault();
-    openShipment(a.dataset.no, s.ctx, loadAll);
+    openShipment(a.dataset.no, current.ctx, () => loadAll(current));
   }));
   $('#check-all').addEventListener('click', () => { s.checked = new Set(ids); renderPick(); });
   $('#check-none').addEventListener('click', () => { s.checked = new Set(); renderPick(); });
-  box.querySelectorAll('.vehicle-pick label:not(.disabled)').forEach((lb) => lb.addEventListener('click', (e) => {
-    e.preventDefault();
-    s.vehicleId = Number(lb.dataset.vid);
+  box.querySelectorAll('.vehicle-pick input:not(:disabled)').forEach(input => input.addEventListener('change', () => {
+    s.vehicleId = Number(input.value);
     renderPick();
   }));
   box.querySelectorAll('[data-relocate]').forEach((b) => b.addEventListener('click', async () => {
+    const id = Number(b.dataset.relocate);
+    if (current.relocating.has(id)) return;
+    current.relocating.add(id);
     b.disabled = true;
     try {
-      const trip = await post(`/api/vehicles/${b.dataset.relocate}/relocate`, { hubId: l.origin.id });
+      const trip = await post(`/api/vehicles/${id}/relocate`, { hubId: l.origin.id });
       toast(`Empty relocation scheduled for ${trip.plateNo}: ${trip.origin.code} → ${trip.destination.code}, ETA ${fmtHM(trip.arriveAt)}`, 'success');
-      await loadAll();
+      await loadAll(current);
     } catch (e) {
       toast(e.message, 'error');
-      b.disabled = false;
+    } finally {
+      current.relocating.delete(id);
+      if (s === current && current.manual && current.selected === laneKey(l)) renderPick();
     }
   }));
   $('#do-dispatch').addEventListener('click', async (e) => {
+    if (current.submitting) return;
+    current.submitting = true;
     e.target.disabled = true;
     try {
-      const trip = await post('/api/dispatch', { vehicleId: s.vehicleId, shipmentIds: [...s.checked] });
+      const trip = await post('/api/dispatch', { vehicleId: current.vehicleId, shipmentIds: [...current.checked] });
       toast(`Trip ${trip.code} created. ${trip.plateNo} has ${trip.shipmentCount} shipments (${fmtKg(trip.loadKg)}), ETD ${fmtHM(trip.departAt)}.`, 'success');
-      s.checked = null;
-      s.vehicleId = null;
-      await loadAll();
+      if (s === current) showDispatchedTrip(current, trip);
     } catch (err) {
       toast(err.message, 'error');
-      await loadAll();
+    } finally {
+      current.submitting = false;
+      if (s === current) {
+        if (current.manual) renderPick();
+        current.reloadSoon();
+      }
     }
   });
 }
 
-function renderTrips() {
-  const el = $('#trips');
-  const loading = s.trips.filter((t) => t.status === 'LOADING').length;
-  $('#trip-sum').textContent = `${s.trips.length - loading} in transit · ${loading} loading`;
-  if (!s.trips.length) {
-    el.innerHTML = '<div class="empty">No trips are currently active.</div>';
-    return;
-  }
-  el.innerHTML = `<table class="data"><thead><tr><th>Trip</th><th>Vehicle</th><th>Route</th><th>Direction</th><th>Status</th>
-      <th style="min-width:150px">Progress</th><th class="right">Load</th><th>Departure</th><th>ETA</th><th>Notes</th></tr></thead><tbody>
-    ${s.trips.map((t) => `<tr data-trip="${t.id}">
-      <td class="mono">${esc(t.code)}</td>
-      <td class="nowrap"><b>${esc(t.plateNo)}</b> <span class="muted">${esc(t.vehicleTypeLabel)}</span></td>
-      <td>${lane(t.origin, t.destination)}</td><td>${dirChip(t.direction, t.directionLabel)}</td>
-      <td>${badge(t.status, t.statusLabel)}</td>
-      <td><div class="bar"><span data-progress style="width:0%"></span></div><div class="bar-label"><span data-pct></span><span data-left></span></div></td>
-      <td class="right num nowrap">${t.relocation ? '<span class="muted">Empty relocation</span>' : `${t.shipmentCount} shipments · ${(t.loadKg / t.capacityKg * 100).toFixed(0)}%`}</td>
-      <td class="nowrap">${fmtTime(t.departAt)}</td><td class="nowrap">${fmtTime(t.arriveAt)}</td>
-      <td>${t.delayReason ? `<span class="badge late plain">Delay: ${esc(t.delayReason)}</span>` : ''}</td></tr>`).join('')}</tbody></table>`;
-  updateProgress();
+function showDispatchedTrip(current, trip) {
+  current.trips = [trip, ...current.trips.filter(item => item.id !== trip.id)];
+  $('#dispatch-search').value = '';
+  $('#dispatch-hub').value = '';
+  current.view = 'trips';
+  selectItem(current, itemKey(trip));
 }
 
 function updateProgress() {
-  if (!s) return;
+  const t = s?.displayed;
+  if (!t || s.manual) return;
   const now = s.ctx.simNow();
-  const byId = new Map(s.trips.map((t) => [String(t.id), t]));
-  document.querySelectorAll('#trips tr[data-trip]').forEach((tr) => {
-    const t = byId.get(tr.dataset.trip);
-    if (!t) return;
-    const depart = Date.parse(t.departAt);
-    const arrive = Date.parse(t.arriveAt);
-    const p = t.status === 'LOADING' || now < depart ? 0 : Math.min(1, (now - depart) / Math.max(1, arrive - depart));
-    tr.querySelector('[data-progress]').style.width = `${(p * 100).toFixed(1)}%`;
-    tr.querySelector('[data-pct]').textContent = t.status === 'LOADING' ? 'Loading' : `${Math.round(p * 100)}%`;
-    const left = t.status === 'LOADING' ? depart - now : arrive - now;
-    tr.querySelector('[data-left]').textContent = left > 0 ? `${Math.round(left / 60000)} min to ${t.status === 'LOADING' ? 'departure' : 'arrival'}` : 'Updating soon';
-  });
+  if (!t.status) {
+    $('#dispatch-queue-age').textContent = `Queued for ${fmtDuration(Math.max(0, now - Date.parse(t.waitingSince)))}`;
+    return;
+  }
+  const depart = Date.parse(t.departAt);
+  const arrive = Date.parse(t.arriveAt);
+  const loading = t.status === 'LOADING';
+  const p = loading ? 0 : Math.max(0, Math.min(1, (now - depart) / Math.max(1, arrive - depart)));
+  const left = (loading ? depart : arrive) - now;
+  const percent = Math.round(p * 100);
+  $('#dispatch-progress').value = percent;
+  $('#dispatch-trip-pct').textContent = `${percent}%`;
+  $('#dispatch-trip-left').textContent = left > 0 ? `${fmtDuration(left)} to ${loading ? 'departure' : 'arrival'}` : 'Updating soon';
+  s.map?.setTripProgress(p);
 }
 
 function renderAutoResult(r) {
@@ -231,52 +337,162 @@ function renderAutoResult(r) {
   </div>`;
 }
 
+function selectItem(current, key, focusRoute = false) {
+  if (key !== current.selected) {
+    current.manual = false;
+    current.checked = null;
+    current.vehicleId = null;
+    current.pickSig = null;
+  }
+  current.selected = key;
+  current.detailsClosed = false;
+  renderWorkspace(current, { focusRoute });
+}
+
 export default {
   title: 'Dispatch',
 
   async mount(root, ctx) {
-    s = { ctx, lanes: [], vehicles: [], trips: [], selected: null, checked: null, vehicleId: null, timers: [] };
+    const current = {
+      root, ctx, lanes: [], vehicles: [], trips: [], selected: null, checked: null, vehicleId: null,
+      view: 'waiting', manual: false, detailsClosed: matchMedia('(max-width: 760px)').matches,
+      version: 0, timers: [], relocating: new Set(), cardMarkup: new WeakMap()
+    };
+    s = current;
     root.innerHTML = `
-      <section class="card">
-        <div class="card-body" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
-          <div style="flex:1;min-width:280px"><b>Automatic dispatch rules</b>
-            <div class="text-2" style="font-size:13px;margin-top:4px">Shipments on the same leg (origin → destination) share a vehicle. Dispatch starts at ≥ 60% or when the oldest shipment has waited 3 hours ( 1.5 hours for Express). Express shipments are loaded first.
-              Cross-sea routes use cargo aircraft. When a hub runs out of vehicles, an idle vehicle can be relocated from the nearest hub without pending freight. Hubs plan dispatch in parallel, with a lock per hub to prevent duplicate assignments.</div></div>
-          <button class="btn primary" id="auto">⚡ Run auto dispatch</button>
+      <div class="dispatch-workspace light-workspace">
+        <section class="dispatch-queue" aria-labelledby="dispatch-queue-title">
+          <header class="dispatch-queue-header">
+            <div class="dispatch-heading"><h2 id="dispatch-queue-title">Dispatch queue</h2><button class="btn primary small" type="button" id="auto">Run auto dispatch</button></div>
+            <div class="dispatch-tabs" role="group" aria-label="Dispatch views">
+              <button type="button" data-view="waiting" aria-pressed="true">Waiting <span data-count>0</span></button>
+              <button type="button" data-view="trips" aria-pressed="false">Active trips <span data-count>0</span></button>
+            </div>
+            <div class="dispatch-filters">
+              <label class="dispatch-search">${SEARCH_ICON}<input id="dispatch-search" type="search" aria-label="Search routes or trips" placeholder="Search hub, trip or plate"></label>
+              <select id="dispatch-hub" class="input" aria-label="Origin hub">${hubOptions(ctx.hubs, null, 'All origins')}</select>
+            </div>
+            <p class="dispatch-list-count" id="lane-sum"></p>
+          </header>
+          <div class="dispatch-rows" id="lane-list"><p class="empty">Loading routes…</p></div>
+          <footer class="dispatch-queue-footer">
+            <details class="dispatch-rules"><summary>Automatic dispatch rules</summary>
+              <p>Shipments on the same leg share a vehicle. Dispatch starts at 60% capacity or after 3 hours in the queue (1.5 hours for Express). Express shipments load first. Cross-sea routes use cargo aircraft.</p>
+              <p>If a hub runs out of vehicles, an idle vehicle can relocate from a nearby hub. Hubs plan dispatch in parallel with a lock per hub to prevent duplicate assignments.</p>
+            </details>
+            <div id="auto-result" aria-live="polite"></div>
+          </footer>
+        </section>
+        <div class="dispatch-stage">
+          <div class="dispatch-map-region" role="region" aria-label="Malaysia dispatch map">
+            <div id="dispatch-map"></div>
+            <div id="dispatch-map-tools" class="dispatch-map-tools" role="group" aria-label="Basemap">
+              <button type="button" data-basemap="street" aria-pressed="true">Map</button>
+              <button type="button" data-basemap="satellite" aria-pressed="false">Satellite</button>
+            </div>
+            <div class="dispatch-map-controls" id="dispatch-map-controls" role="group" aria-label="Map controls">
+              <button type="button" data-map-zoom="in" aria-label="Zoom in">+</button>
+              <button type="button" data-map-zoom="out" aria-label="Zoom out">−</button>
+              <button type="button" data-map-zoom="reset" aria-label="Show all of Malaysia" title="Show all of Malaysia">⌖</button>
+            </div>
+            <div class="dispatch-map-credit"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a><span id="dispatch-satellite-credit" hidden> · <a href="https://s2maps.eu/" target="_blank" rel="noopener noreferrer">Sentinel‑2 by EOX</a></span> · Natural Earth</div>
+          </div>
+          <section id="dispatch-detail" class="dispatch-detail" aria-labelledby="dispatch-detail-title" hidden>
+            <header class="dispatch-detail-head"><h3 id="dispatch-detail-title" tabindex="-1"></h3>
+              <button type="button" class="dispatch-close" id="close-dispatch-detail" aria-label="Close route details">×</button></header>
+            <div id="dispatch-summary" class="dispatch-detail-body"></div>
+            <div id="pick" class="dispatch-detail-body" hidden></div>
+          </section>
         </div>
-        <div id="auto-result" class="card-body" style="padding-top:0"></div>
-      </section>
-      <div class="dispatch-grid">
-        <section class="card"><div class="card-head"><h2>Routes awaiting dispatch</h2><span class="sub" id="lane-sum"></span></div>
-          <div class="card-body flush" style="padding-top:12px"><div class="lane-list" id="lane-list"><div class="empty">Loading…</div></div></div></section>
-        <section class="card"><div class="card-head"><h2 id="pick-title">Manual dispatch</h2></div><div class="card-body" id="pick"></div></section>
-      </div>
-      <section class="card"><div class="card-head"><h2>Active trips</h2><span class="sub" id="trip-sum"></span></div>
-        <div class="card-body flush"><div class="table-wrap" id="trips"></div></div></section>`;
+      </div>`;
 
-    $('#auto').addEventListener('click', async (e) => {
-      e.target.disabled = true;
-      e.target.textContent = 'Dispatching…';
+    if (globalThis.L) {
+      current.map = new DispatchMap($('#dispatch-map'), id => {
+        const select = $('#dispatch-hub');
+        select.value = select.value === String(id) ? '' : String(id);
+        current.detailsClosed = false;
+        renderWorkspace(current);
+      });
+    } else {
+      $('#dispatch-map').innerHTML = '<p class="empty">The map is temporarily unavailable.</p>';
+      $('#dispatch-map-tools').hidden = true;
+      $('#dispatch-map-controls').hidden = true;
+    }
+
+    $('.dispatch-tabs').addEventListener('click', event => {
+      const tab = event.target.closest('[data-view]');
+      if (!tab || tab.dataset.view === current.view) return;
+      current.view = tab.dataset.view;
+      selectItem(current, null);
+    });
+    $('#dispatch-search').addEventListener('input', () => renderWorkspace(current));
+    $('#dispatch-hub').addEventListener('change', () => renderWorkspace(current));
+    $('#lane-list').addEventListener('click', event => {
+      const card = event.target.closest('[data-key]');
+      if (!card) return;
+      selectItem(current, card.dataset.key, true);
+      if (matchMedia('(max-width: 760px)').matches) $('#dispatch-detail-title').focus();
+    });
+    $('#dispatch-detail').addEventListener('click', event => {
+      if (event.target.closest('#show-pick')) {
+        current.manual = true;
+        current.pickSig = null;
+        renderDetail(current, current.displayed);
+        $('#dispatch-detail-title').focus();
+      } else if (event.target.closest('#close-dispatch-detail')) {
+        if (current.manual) {
+          current.manual = false;
+          renderDetail(current, current.displayed);
+          $('#show-pick').focus();
+        } else {
+          current.detailsClosed = true;
+          renderWorkspace(current);
+          const card = [...$('#lane-list').children].find(item => item.dataset.key === current.selected);
+          card?.focus();
+        }
+      }
+    });
+    $('#dispatch-map-tools').addEventListener('click', event => {
+      const button = event.target.closest('[data-basemap]');
+      if (!button || button.getAttribute('aria-pressed') === 'true') return;
+      for (const item of $('#dispatch-map-tools').children) item.setAttribute('aria-pressed', String(item === button));
+      current.map?.setBasemap(button.dataset.basemap);
+      $('#dispatch-satellite-credit').hidden = button.dataset.basemap !== 'satellite';
+    });
+    $('#dispatch-map-controls').addEventListener('click', event => {
+      const action = event.target.closest('[data-map-zoom]')?.dataset.mapZoom;
+      if (action === 'reset') current.map?.reset();
+      else if (action) current.map?.zoom(action === 'in' ? 1 : -1);
+    });
+    $('#auto').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = 'Dispatching…';
       try {
         const r = await post('/api/dispatch/auto');
+        if (s !== current) return;
         renderAutoResult(r);
-        await loadAll();
+        current.reloadSoon();
       } catch (err) {
         toast(err.message, 'error');
       } finally {
-        e.target.disabled = false;
-        e.target.textContent = '⚡ Run auto dispatch';
+        button.disabled = false;
+        button.textContent = 'Run auto dispatch';
       }
     });
-    s.reloadSoon = throttle(() => loadAll().catch(() => {}), 2000);
-    await loadAll();
-    s.timers.push(setInterval(updateProgress, 1000));
-    s.timers.push(setInterval(() => loadAll().catch(() => {}), 15000));
+    current.reloadSoon = throttle(() => loadAll(current).catch(() => {}), 2000);
+    current.timers.push(setInterval(updateProgress, 1000), setInterval(current.reloadSoon, 15000));
+    try {
+      await loadAll(current);
+    } catch {
+      if (s === current) $('#lane-list').innerHTML = '<p class="empty">Routes could not load. Retrying shortly.</p>';
+    }
   },
 
   unmount() {
     if (!s) return;
     s.timers.forEach(clearInterval);
+    s.map?.destroy();
     s = null;
   },
 

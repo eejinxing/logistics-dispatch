@@ -1,0 +1,46 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.4)
+
+2026-11-18T19:05:05.520+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] c.e.logistics.LogisticsApplication       : Starting LogisticsApplication using Java 24.0.1 with PID 30236 (C:\Users\Jinwang\Desktop\logistics-dispatch\logistics-dispatch\target\classes started by Jinwang in C:\Users\Jinwang\Desktop\logistics-dispatch\logistics-dispatch)
+2026-11-18T19:05:05.521+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] c.e.logistics.LogisticsApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-11-18T19:05:06.284+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-18T19:05:06.354+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 62 ms. Found 7 JPA repository interfaces.
+2026-11-18T19:05:06.734+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18092 (http)
+2026-11-18T19:05:06.748+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-18T19:05:06.749+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.43]
+2026-11-18T19:05:06.809+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-18T19:05:06.809+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1251 ms
+2026-11-18T19:05:06.984+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-11-18T19:05:07.051+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.22.Final
+2026-11-18T19:05:07.084+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-11-18T19:05:07.337+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-18T19:05:07.365+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-18T19:05:07.542+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:logistics user=SA
+2026-11-18T19:05:07.543+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-18T19:05:07.609+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-18T19:05:08.535+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-18T19:05:08.602+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-18T19:05:08.973+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-11-18T19:05:10.370+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-18T19:05:10.528+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-11-18T19:05:10.547+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name appUserDetailsService
+2026-11-18T19:05:10.803+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18092 (http) with context path '/'
+2026-11-18T19:05:10.813+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] c.e.logistics.LogisticsApplication       : Started LogisticsApplication in 5.683 seconds (process running for 5.964)
+2026-11-18T19:05:12.258+08:00  INFO [] 30236 --- [logistics-dispatch] [           main] com.example.logistics.seed.DataSeeder    : Seeded demo data in 1242 ms: 12 hubs, 41 vehicles, 16 merchants, 300 shipments
+2026-11-18T19:06:37.435+08:00  INFO [] 30236 --- [logistics-dispatch] [.1-18092-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-18T19:06:37.435+08:00  INFO [] 30236 --- [logistics-dispatch] [.1-18092-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-18T19:06:37.437+08:00  INFO [] 30236 --- [logistics-dispatch] [.1-18092-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms

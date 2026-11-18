@@ -1,5 +1,6 @@
 package com.example.logistics.account;
 
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -17,8 +18,13 @@ public class AppUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) {
-        return users.findForLogin(username.trim())
-                .map(AppUserPrincipal::from)
+        return users.findByUsernameIgnoreCase(username.trim())
+                .filter(AppUser::isAdministrator)
+                .map(user -> User.withUsername(user.getUsername())
+                        .password(user.getPasswordHash())
+                        .roles(AppUser.ADMIN_ROLE)
+                        .disabled(!user.isEnabled())
+                        .build())
                 .orElseThrow(() -> new UsernameNotFoundException("unknown user"));
     }
 }

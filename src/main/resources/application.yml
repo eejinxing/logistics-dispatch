@@ -64,7 +64,6 @@ app:
     history-days: 3
     history-shipments: 260
     pending-shipments: 40
-    demo-password: ${DEMO_PASSWORD:demo123}
 
   routing:
     gateway: KUL

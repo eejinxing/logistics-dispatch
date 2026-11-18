@@ -1,7 +1,6 @@
 package com.example.logistics.shipment;
 
 import com.example.logistics.common.BusinessException;
-import com.example.logistics.common.PhoneNumbers;
 import com.example.logistics.dispatch.Trip;
 import com.example.logistics.geo.Direction;
 import com.example.logistics.hub.Hub;
@@ -29,8 +28,7 @@ import java.time.Instant;
         @Index(name = "ix_shipment_origin_status", columnList = "origin_id,status"),
         @Index(name = "ix_shipment_created", columnList = "created_at"),
         @Index(name = "ix_shipment_next_step", columnList = "next_step_at"),
-        @Index(name = "ix_shipment_merchant", columnList = "merchant_id"),
-        @Index(name = "ix_shipment_receiver_phone", columnList = "receiver_phone_key")
+        @Index(name = "ix_shipment_merchant", columnList = "merchant_id")
 })
 public class Shipment {
     @Id
@@ -48,9 +46,6 @@ public class Shipment {
 
     @Column(length = 30)
     private String receiverPhone;
-
-    @Column(length = 20)
-    private String receiverPhoneKey;
 
     @Column(length = 200)
     private String receiverAddress;
@@ -120,7 +115,6 @@ public class Shipment {
         this.senderName = senderName;
         this.receiverName = receiverName;
         this.receiverPhone = receiverPhone;
-        this.receiverPhoneKey = PhoneNumbers.key(receiverPhone);
         this.receiverAddress = receiverAddress;
         this.merchant = merchant;
         this.origin = origin;
@@ -217,16 +211,8 @@ public class Shipment {
         return receiverAddress;
     }
 
-    public String getReceiverPhoneKey() {
-        return receiverPhoneKey;
-    }
-
     public Merchant getMerchant() {
         return merchant;
-    }
-
-    public boolean belongsTo(long merchantId) {
-        return merchant != null && merchant.getId() != null && merchant.getId() == merchantId;
     }
 
     public Hub getOrigin() {

@@ -50,52 +50,36 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long>, JpaSp
     List<Object[]> countWaitingByHub(@Param("statuses") Collection<ShipmentStatus> statuses);
 
 
-    @Query("""
-            select s.status, count(s) from Shipment s
-            where (:merchantId is null or s.merchant.id = :merchantId) group by s.status""")
-    List<Object[]> countByStatus(@Param("merchantId") Long merchantId);
-
-    default List<Object[]> countByStatus() {
-        return countByStatus(null);
-    }
+    @Query("select s.status, count(s) from Shipment s group by s.status")
+    List<Object[]> countByStatus();
 
     @Query("""
             select s.direction, count(s), coalesce(sum(s.weightKg), 0) from Shipment s
             where s.status in :statuses and (:originId is null or s.origin.id = :originId)
-              and (:merchantId is null or s.merchant.id = :merchantId)
             group by s.direction""")
     List<Object[]> countByDirection(@Param("statuses") Collection<ShipmentStatus> statuses,
-                                    @Param("originId") Long originId, @Param("merchantId") Long merchantId);
+                                    @Param("originId") Long originId);
 
     @Query("""
             select s.origin.id, s.destination.id, s.direction, count(s), coalesce(sum(s.weightKg), 0) from Shipment s
             where s.status in :statuses and (:originId is null or s.origin.id = :originId)
-              and (:merchantId is null or s.merchant.id = :merchantId)
             group by s.origin.id, s.destination.id, s.direction
             order by count(s) desc""")
     List<Object[]> laneVolumes(@Param("statuses") Collection<ShipmentStatus> statuses,
-                               @Param("originId") Long originId, @Param("merchantId") Long merchantId,
-                               Pageable pageable);
+                               @Param("originId") Long originId, Pageable pageable);
 
     @Query("""
             select count(s), coalesce(sum(s.price), 0) from Shipment s
-            where s.createdAt >= :since and s.status <> :excluded
-              and (:merchantId is null or s.merchant.id = :merchantId)""")
-    List<Object[]> createdSince(@Param("since") Instant since, @Param("excluded") ShipmentStatus excluded,
-                                @Param("merchantId") Long merchantId);
+            where s.createdAt >= :since and s.status <> :excluded""")
+    List<Object[]> createdSince(@Param("since") Instant since, @Param("excluded") ShipmentStatus excluded);
 
     @Query("""
             select count(s), coalesce(sum(case when s.deliveredAt <= s.promisedBy then 1 else 0 end), 0)
-            from Shipment s where s.status = :delivered and s.deliveredAt >= :since
-              and (:merchantId is null or s.merchant.id = :merchantId)""")
-    List<Object[]> deliveredSince(@Param("since") Instant since, @Param("delivered") ShipmentStatus delivered,
-                                  @Param("merchantId") Long merchantId);
+            from Shipment s where s.status = :delivered and s.deliveredAt >= :since""")
+    List<Object[]> deliveredSince(@Param("since") Instant since, @Param("delivered") ShipmentStatus delivered);
 
-    @Query("""
-            select count(s) from Shipment s where s.status in :statuses and s.promisedBy < :now
-              and (:merchantId is null or s.merchant.id = :merchantId)""")
-    long countLate(@Param("statuses") Collection<ShipmentStatus> statuses, @Param("now") Instant now,
-                   @Param("merchantId") Long merchantId);
+    @Query("select count(s) from Shipment s where s.status in :statuses and s.promisedBy < :now")
+    long countLate(@Param("statuses") Collection<ShipmentStatus> statuses, @Param("now") Instant now);
 
     @EntityGraph(attributePaths = {"origin", "destination", "currentHub", "merchant", "trip", "trip.vehicle"})
     @Query("select s from Shipment s where s.status in :statuses and s.promisedBy < :now order by s.promisedBy")
@@ -105,25 +89,6 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long>, JpaSp
     @EntityGraph(attributePaths = {"origin", "destination", "currentHub", "merchant", "trip", "trip.vehicle"})
     @Query("select s from Shipment s where s.status = :status order by s.statusChangedAt desc")
     List<Shipment> findLatestWithStatus(@Param("status") ShipmentStatus status, Pageable pageable);
-
-    @EntityGraph(attributePaths = {"origin", "destination", "currentHub", "merchant", "trip"})
-    @Query("select s from Shipment s where s.receiverPhoneKey = :phoneKey order by s.createdAt desc")
-    List<Shipment> findForReceiver(@Param("phoneKey") String phoneKey, Pageable pageable);
-
-    boolean existsByTrackingNoAndReceiverPhoneKey(String trackingNo, String receiverPhoneKey);
-
-    @Query("select s.merchant.id, count(s) from Shipment s where s.merchant is not null group by s.merchant.id")
-    List<Object[]> countPerMerchant();
-
-    @Query("""
-            select s.merchant.id, count(s) from Shipment s
-            where s.merchant is not null and s.status in :statuses group by s.merchant.id""")
-    List<Object[]> countPerMerchant(@Param("statuses") Collection<ShipmentStatus> statuses);
-
-    @Query("""
-            select s.merchant.id, coalesce(sum(s.price), 0) from Shipment s
-            where s.merchant is not null and s.status <> :excluded and s.createdAt >= :since group by s.merchant.id""")
-    List<Object[]> revenuePerMerchant(@Param("excluded") ShipmentStatus excluded, @Param("since") Instant since);
 
     @Query("""
             select s.id from Shipment s

@@ -4,7 +4,6 @@ import com.example.logistics.common.BusinessException;
 import com.example.logistics.common.NotFoundException;
 import com.example.logistics.concurrent.BulkheadFullException;
 import com.example.logistics.concurrent.LockTimeoutException;
-import com.example.logistics.concurrent.RateLimitedException;
 import org.springframework.dao.DataIntegrityViolationException;
 import com.example.logistics.concurrent.Throwables;
 import jakarta.validation.ConstraintViolationException;
@@ -64,14 +63,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal error", "An unexpected error occurred", null);
     }
 
-    @ExceptionHandler(RateLimitedException.class)
-    ResponseEntity<ProblemDetail> handleRateLimited(RateLimitedException ex) {
-        return problem(HttpStatus.TOO_MANY_REQUESTS, "Too many requests", "Try again shortly", String.valueOf(ex.retryAfterSeconds()));
-    }
-
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ProblemDetail> handleDuplicate(DataIntegrityViolationException ex) {
-        return problem(HttpStatus.CONFLICT, "Duplicate record", "A record with this username, phone number, or name already exists", null);
+        return problem(HttpStatus.CONFLICT, "Duplicate record", "A record with the same unique value already exists", null);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

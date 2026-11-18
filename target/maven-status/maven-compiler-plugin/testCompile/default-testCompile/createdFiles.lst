@@ -1,0 +1,8 @@
+com\example\logistics\seed\DataSeederTest.class
+com\example\logistics\dispatch\TransferRoutingTest.class
+com\example\logistics\geo\GeoTest.class
+com\example\logistics\dispatch\DispatchConcurrencyTest.class
+com\example\logistics\dispatch\DispatchRulesTest.class
+com\example\logistics\simulation\SimulationClockTest.class
+com\example\logistics\TestData.class
+com\example\logistics\web\ApiTest.class

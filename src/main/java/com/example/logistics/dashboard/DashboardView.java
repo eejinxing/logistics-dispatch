@@ -34,7 +34,11 @@ public record DashboardView(
                         long delivered24h, double onTimeRate24h) {
     }
 
-    public record Alerts(long late, long exceptions, List<ShipmentView> topLate, List<ShipmentView> latestExceptions) {
+    public record Alerts(long late, long exceptions, List<ShipmentView> topLate, List<ShipmentView> latestExceptions,
+                         List<ExceptionBucket> exceptionTrend) {
+    }
+
+    public record ExceptionBucket(Instant start, long count) {
     }
 
     public record Fleet(long total, long idle, long onTrip, long maintenance, double utilisation) {

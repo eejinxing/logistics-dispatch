@@ -1,0 +1,173 @@
+Access is denied.
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/C:/Users/Jinwang/.m2/wrapper/dists/apache-maven-3.9.11/a2d47e15/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.example:logistics-dispatch >-------------------
+[INFO] Building logistics-dispatch 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ logistics-dispatch ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 23 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ logistics-dispatch ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ logistics-dispatch ---
+[INFO] skip non existing resourceDirectory C:\Users\Jinwang\Desktop\logistics-dispatch\logistics-dispatch\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ logistics-dispatch ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ logistics-dispatch ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.example.logistics.dispatch.DispatchConcurrencyTest
+19:16:31.016 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.example.logistics.dispatch.DispatchConcurrencyTest]: DispatchConcurrencyTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:16:31.178 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.example.logistics.LogisticsApplication for test class com.example.logistics.dispatch.DispatchConcurrencyTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.4)
+
+2026-11-18T19:16:31.785+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] c.e.l.dispatch.DispatchConcurrencyTest   : Starting DispatchConcurrencyTest using Java 24.0.1 with PID 26432 (started by Jinwang in C:\Users\Jinwang\Desktop\logistics-dispatch\logistics-dispatch)
+2026-11-18T19:16:31.786+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] c.e.l.dispatch.DispatchConcurrencyTest   : No active profile set, falling back to 1 default profile: "default"
+2026-11-18T19:16:32.986+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-18T19:16:33.114+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 116 ms. Found 7 JPA repository interfaces.
+2026-11-18T19:16:33.609+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-11-18T19:16:33.690+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.22.Final
+2026-11-18T19:16:33.741+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-11-18T19:16:34.098+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-18T19:16:34.132+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-18T19:16:34.310+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:logistics user=SA
+2026-11-18T19:16:34.311+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-18T19:16:34.372+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-18T19:16:35.494+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-18T19:16:35.574+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-18T19:16:35.943+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-11-18T19:16:37.760+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-18T19:16:38.094+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-11-18T19:16:38.125+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name appUserDetailsService
+2026-11-18T19:16:38.599+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] c.e.l.dispatch.DispatchConcurrencyTest   : Started DispatchConcurrencyTest in 7.229 seconds (process running for 8.458)
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.601 s -- in com.example.logistics.dispatch.DispatchConcurrencyTest
+[INFO] Running com.example.logistics.dispatch.DispatchRulesTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.example.logistics.dispatch.DispatchRulesTest
+[INFO] Running com.example.logistics.dispatch.TransferRoutingTest
+2026-11-18T19:16:39.475+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.example.logistics.dispatch.TransferRoutingTest]: TransferRoutingTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-18T19:16:39.478+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.example.logistics.LogisticsApplication for test class com.example.logistics.dispatch.TransferRoutingTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.094 s -- in com.example.logistics.dispatch.TransferRoutingTest
+[INFO] Running com.example.logistics.geo.GeoTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.example.logistics.geo.GeoTest
+[INFO] Running com.example.logistics.seed.DataSeederTest
+2026-11-18T19:16:39.577+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.example.logistics.seed.DataSeederTest]: DataSeederTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-18T19:16:39.597+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.example.logistics.LogisticsApplication for test class com.example.logistics.seed.DataSeederTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.4)
+
+2026-11-18T19:16:39.635+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] c.example.logistics.seed.DataSeederTest  : Starting DataSeederTest using Java 24.0.1 with PID 26432 (started by Jinwang in C:\Users\Jinwang\Desktop\logistics-dispatch\logistics-dispatch)
+2026-11-18T19:16:39.635+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] c.example.logistics.seed.DataSeederTest  : No active profile set, falling back to 1 default profile: "default"
+2026-11-18T19:16:40.056+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-18T19:16:40.105+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 47 ms. Found 7 JPA repository interfaces.
+2026-11-18T19:16:40.174+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-11-18T19:16:40.179+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-11-18T19:16:40.192+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-18T19:16:40.193+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-11-18T19:16:40.195+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection conn24: url=jdbc:h2:mem:seeded-dashboard user=SA
+2026-11-18T19:16:40.196+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-11-18T19:16:40.196+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-2)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-18T19:16:40.289+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-18T19:16:40.305+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-18T19:16:40.483+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-18T19:16:40.543+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-11-18T19:16:40.549+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name appUserDetailsService
+2026-11-18T19:16:40.616+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] c.example.logistics.seed.DataSeederTest  : Started DataSeederTest in 1.014 seconds (process running for 10.476)
+2026-11-18T19:16:41.816+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.example.logistics.seed.DataSeeder    : Seeded demo data in 1119 ms: 12 hubs, 41 vehicles, 16 merchants, 300 shipments
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.362 s -- in com.example.logistics.seed.DataSeederTest
+[INFO] Running com.example.logistics.simulation.SimulationClockTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.example.logistics.simulation.SimulationClockTest
+[INFO] Running com.example.logistics.web.ApiTest
+2026-11-18T19:16:41.945+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.example.logistics.web.ApiTest]: ApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-18T19:16:41.973+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.example.logistics.LogisticsApplication for test class com.example.logistics.web.ApiTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.4)
+
+2026-11-18T19:16:42.004+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.example.logistics.web.ApiTest        : Starting ApiTest using Java 24.0.1 with PID 26432 (started by Jinwang in C:\Users\Jinwang\Desktop\logistics-dispatch\logistics-dispatch)
+2026-11-18T19:16:42.004+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.example.logistics.web.ApiTest        : No active profile set, falling back to 1 default profile: "default"
+2026-11-18T19:16:42.364+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-18T19:16:42.409+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 43 ms. Found 7 JPA repository interfaces.
+2026-11-18T19:16:42.477+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-11-18T19:16:42.482+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-11-18T19:16:42.496+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-18T19:16:42.497+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-11-18T19:16:42.498+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection conn48: url=jdbc:h2:mem:logistics user=SA
+2026-11-18T19:16:42.498+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-11-18T19:16:42.499+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-3)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-18T19:16:42.592+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-18T19:16:42.612+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-18T19:16:42.777+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-11-18T19:16:42.838+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-11-18T19:16:42.844+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name appUserDetailsService
+2026-11-18T19:16:42.940+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-11-18T19:16:42.940+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-11-18T19:16:42.940+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-11-18T19:16:42.963+08:00  INFO [] 26432 --- [logistics-dispatch] [           main] com.example.logistics.web.ApiTest        : Started ApiTest in 0.987 seconds (process running for 12.823)
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.083 s -- in com.example.logistics.web.ApiTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  16.437 s
+[INFO] Finished at: 2026-11-18T19:16:44+08:00
+[INFO] ------------------------------------------------------------------------

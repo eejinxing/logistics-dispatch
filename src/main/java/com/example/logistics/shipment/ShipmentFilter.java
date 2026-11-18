@@ -3,9 +3,13 @@ package com.example.logistics.shipment;
 import com.example.logistics.geo.Direction;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -18,14 +22,13 @@ public record ShipmentFilter(
         Direction direction,
         Priority priority,
         Boolean late,
-        String q,
-        Long merchantId) {
+        @Size(max = 40) String q,
+        Long merchantId,
+        List<ShipmentStatus> statuses,
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
 
-    public ShipmentFilter forMerchant(long id) {
-        return new ShipmentFilter(status, active, originId, destinationId, direction, priority, late, q, id);
-    }
-
-    public Specification<Shipment> toSpecification(Instant now) {
+    public Specification<Shipment> toSpecification(Instant now, ZoneId zone) {
         return (root, query, cb) -> {
             List<Predicate> where = new ArrayList<>();
             if (merchantId != null) {
@@ -33,6 +36,15 @@ public record ShipmentFilter(
             }
             if (status != null) {
                 where.add(cb.equal(root.get("status"), status));
+            }
+            if (statuses != null && !statuses.isEmpty()) {
+                where.add(root.get("status").in(statuses));
+            }
+            if (from != null) {
+                where.add(cb.greaterThanOrEqualTo(root.get("createdAt"), from.atStartOfDay(zone).toInstant()));
+            }
+            if (to != null) {
+                where.add(cb.lessThan(root.get("createdAt"), to.plusDays(1).atStartOfDay(zone).toInstant()));
             }
             if (Boolean.TRUE.equals(active)) {
                 where.add(root.get("status").in(ShipmentStatus.ACTIVE));

@@ -6,6 +6,7 @@ import com.example.logistics.concurrent.Throwables;
 import com.example.logistics.config.ConcurrencyProperties;
 import com.example.logistics.dashboard.DashboardView.Alerts;
 import com.example.logistics.dashboard.DashboardView.DirectionCount;
+import com.example.logistics.dashboard.DashboardView.ExceptionBucket;
 import com.example.logistics.dashboard.DashboardView.Fleet;
 import com.example.logistics.dashboard.DashboardView.LaneVolume;
 import com.example.logistics.dashboard.DashboardView.StatusCount;
@@ -14,6 +15,7 @@ import com.example.logistics.geo.Direction;
 import com.example.logistics.shipment.ShipmentRepository;
 import com.example.logistics.shipment.ShipmentStatus;
 import com.example.logistics.shipment.ShipmentView;
+import com.example.logistics.shipment.TrackingEventRepository;
 import com.example.logistics.simulation.SimulationClock;
 import com.example.logistics.vehicle.VehicleRepository;
 import com.example.logistics.vehicle.VehicleStatus;
@@ -27,6 +29,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -39,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static com.example.logistics.config.ExecutorConfig.IO_EXECUTOR;
 
@@ -47,8 +52,11 @@ public class DashboardService {
     private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
     private static final String BULKHEAD = "dashboard";
     private static final int LANE_LIMIT = 40;
+    private static final int EXCEPTION_BUCKETS = 24;
+    private static final int EXCEPTION_BUCKET_HOURS = 3;
 
     private final ShipmentRepository shipments;
+    private final TrackingEventRepository trackingEvents;
     private final VehicleRepository vehicles;
     private final SimulationClock clock;
     private final BulkheadRegistry bulkheads;
@@ -57,10 +65,12 @@ public class DashboardService {
     private final long partTimeoutMs;
     private final SingleFlight<String, DashboardView> flights = new SingleFlight<>();
 
-    public DashboardService(ShipmentRepository shipments, VehicleRepository vehicles, SimulationClock clock,
+    public DashboardService(ShipmentRepository shipments, TrackingEventRepository trackingEvents,
+                            VehicleRepository vehicles, SimulationClock clock,
                             BulkheadRegistry bulkheads, @Qualifier(IO_EXECUTOR) Executor ioExecutor,
                             ConcurrencyProperties props, MeterRegistry metrics) {
         this.shipments = shipments;
+        this.trackingEvents = trackingEvents;
         this.vehicles = vehicles;
         this.clock = clock;
         this.bulkheads = bulkheads;
@@ -137,7 +147,7 @@ public class DashboardService {
 
     private List<DirectionCount> directionCounts(Set<ShipmentStatus> statuses, Long originId) {
         Map<Direction, Object[]> rows = new EnumMap<>(Direction.class);
-        for (Object[] row : shipments.countByDirection(statuses, originId, null)) {
+        for (Object[] row : shipments.countByDirection(statuses, originId)) {
             rows.put((Direction) row[0], row);
         }
         return Arrays.stream(Direction.values()).map(d -> {
@@ -149,7 +159,7 @@ public class DashboardService {
     }
 
     private List<LaneVolume> laneVolumes(Set<ShipmentStatus> statuses, Long originId) {
-        return shipments.laneVolumes(statuses, originId, null, PageRequest.of(0, LANE_LIMIT)).stream()
+        return shipments.laneVolumes(statuses, originId, PageRequest.of(0, LANE_LIMIT)).stream()
                 .map(row -> {
                     Direction d = (Direction) row[2];
                     return new LaneVolume((Long) row[0], (Long) row[1], d, d.label(), (Long) row[3],
@@ -159,9 +169,9 @@ public class DashboardService {
     }
 
     private Today today(Instant dayStart, Instant now) {
-        Object[] created = shipments.createdSince(dayStart, ShipmentStatus.CANCELLED, null).getFirst();
-        Object[] deliveredToday = shipments.deliveredSince(dayStart, ShipmentStatus.DELIVERED, null).getFirst();
-        Object[] delivered24h = shipments.deliveredSince(now.minus(Duration.ofHours(24)), ShipmentStatus.DELIVERED, null).getFirst();
+        Object[] created = shipments.createdSince(dayStart, ShipmentStatus.CANCELLED).getFirst();
+        Object[] deliveredToday = shipments.deliveredSince(dayStart, ShipmentStatus.DELIVERED).getFirst();
+        Object[] delivered24h = shipments.deliveredSince(now.minus(Duration.ofHours(24)), ShipmentStatus.DELIVERED).getFirst();
         long d24 = ((Number) delivered24h[0]).longValue();
         long onTime24 = ((Number) delivered24h[1]).longValue();
         return new Today(
@@ -180,7 +190,22 @@ public class DashboardService {
                 .stream().map(s -> ShipmentView.from(s, now)).toList();
         long exceptionCount = shipments.countByStatus().stream()
                 .filter(r -> r[0] == ShipmentStatus.EXCEPTION).mapToLong(r -> (Long) r[1]).sum();
-        return new Alerts(shipments.countLate(ShipmentStatus.ACTIVE, now, null), exceptionCount, topLate, exceptions);
+        return new Alerts(shipments.countLate(ShipmentStatus.ACTIVE, now), exceptionCount, topLate, exceptions,
+                exceptionTrend(now));
+    }
+
+    private List<ExceptionBucket> exceptionTrend(Instant now) {
+        ZonedDateTime localHour = now.atZone(clock.getZone()).truncatedTo(ChronoUnit.HOURS);
+        Instant currentBucket = localHour.minusHours(localHour.getHour() % EXCEPTION_BUCKET_HOURS).toInstant();
+        Instant start = currentBucket.minus((EXCEPTION_BUCKETS - 1) * EXCEPTION_BUCKET_HOURS, ChronoUnit.HOURS);
+        long[] counts = new long[EXCEPTION_BUCKETS];
+        for (Instant event : trackingEvents.occurrenceTimes(ShipmentStatus.EXCEPTION, start, now)) {
+            int bucket = (int) (ChronoUnit.HOURS.between(start, event) / EXCEPTION_BUCKET_HOURS);
+            counts[bucket]++;
+        }
+        return IntStream.range(0, EXCEPTION_BUCKETS)
+                .mapToObj(i -> new ExceptionBucket(start.plus(i * EXCEPTION_BUCKET_HOURS, ChronoUnit.HOURS), counts[i]))
+                .toList();
     }
 
     private Fleet fleet() {

@@ -1,21 +1,19 @@
 package com.example.logistics.web;
 
 import com.example.logistics.common.PageView;
-import com.example.logistics.geo.Direction;
 import com.example.logistics.shipment.CreateShipmentRequest;
-import com.example.logistics.shipment.Priority;
 import com.example.logistics.shipment.QuoteRequest;
 import com.example.logistics.shipment.QuoteView;
 import com.example.logistics.shipment.ShipmentDetail;
 import com.example.logistics.shipment.ShipmentFilter;
 import com.example.logistics.shipment.ShipmentService;
-import com.example.logistics.shipment.ShipmentStatus;
 import com.example.logistics.shipment.ShipmentView;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,20 +36,10 @@ public class ShipmentController {
     }
 
     @GetMapping
-    public PageView<ShipmentView> search(@RequestParam(required = false) ShipmentStatus status,
-                                         @RequestParam(required = false) Boolean active,
-                                         @RequestParam(required = false) Long originId,
-                                         @RequestParam(required = false) Long destinationId,
-                                         @RequestParam(required = false) Direction direction,
-                                         @RequestParam(required = false) Priority priority,
-                                         @RequestParam(required = false) Boolean late,
-                                         @RequestParam(required = false) @Size(max = 40) String q,
-                                         @RequestParam(required = false) Long merchantId,
+    public PageView<ShipmentView> search(@Valid @ModelAttribute ShipmentFilter filter,
                                          @RequestParam(defaultValue = "0") int page,
                                          @RequestParam(defaultValue = "20") int size) {
-        return shipments.search(new ShipmentFilter(status, active, originId, destinationId, direction, priority, late, q,
-                        merchantId),
-                page, size);
+        return shipments.search(filter, page, size);
     }
 
     @GetMapping("/{trackingNo}")

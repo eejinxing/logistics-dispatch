@@ -43,7 +43,6 @@ public class SimulationEngine {
     private static final Logger log = LoggerFactory.getLogger(SimulationEngine.class);
     private static final int MAX_STEPS_PER_TICK = 200;
     private static final int MAX_NEW_ORDERS_PER_TICK = 20;
-    private static final double DEMO_CUSTOMER_RATE = 0.06;
     private static final DateTimeFormatter HHMM = DateTimeFormatter.ofPattern("MM-dd HH:mm");
     private static final List<String> ROAD_DELAYS = List.of("Highway traffic", "Wet roads after heavy rain", "Checkpoint queue", "Minor vehicle fault repaired", "Toll plaza congestion");
     private static final List<String> AIR_DELAYS = List.of("Flight delay", "Weather delayed departure", "Airport cargo terminal queue");
@@ -269,7 +268,7 @@ public class SimulationEngine {
         }
         for (int i = 0; i < count; i++) {
             Merchant merchant = FakeData.pickMerchant(active, rnd);
-            shipmentService.createForMerchant(merchant.getId(), FakeData.randomOrder(merchant, hubList, rnd, DEMO_CUSTOMER_RATE));
+            shipmentService.create(FakeData.randomOrder(merchant, hubList, rnd));
         }
     }
 

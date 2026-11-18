@@ -5,12 +5,9 @@ import shipments from './pages/shipments.js';
 import dispatch from './pages/dispatch.js';
 import fleet from './pages/fleet.js';
 import hubs from './pages/hubs.js';
-import reports from './pages/reports.js';
-import merchants from './pages/merchants.js';
-import accounts from './pages/accounts.js';
 
-const PAGES = { dashboard, shipments, dispatch, fleet, hubs, reports, merchants, accounts };
-const PAGE_TITLES = { dashboard: dashboard.title, shipments: 'Shipments', dispatch: 'Dispatch', fleet: 'Fleet', hubs: 'Hubs', reports: 'Reports', merchants: 'Merchants', accounts: 'Accounts' };
+const PAGES = { dashboard, shipments, dispatch, fleet, hubs };
+const PAGE_TITLES = { dashboard: dashboard.title, shipments: 'Shipments', dispatch: 'Dispatch', fleet: 'Fleet', hubs: 'Hubs' };
 const LIVE_TYPES = ['shipment', 'trip', 'alert', 'dispatch', 'clock', 'fleet'];
 const simDate = new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
@@ -18,7 +15,6 @@ const ctx = {
   hubs: [],
   hubsById: new Map(),
   sim: { nowMs: Date.now(), scale: 1, paused: false, at: performance.now() },
-  feed: [],
   simNow() {
     const s = ctx.sim;
     return s.paused ? s.nowMs : s.nowMs + (performance.now() - s.at) * s.scale;
@@ -45,7 +41,13 @@ async function route() {
   const changedPage = current?.name !== name;
   try { current?.page.unmount?.(); } catch (e) { console.error(e); }
   current = { name, page };
-  $$('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.route === name));
+  $$('#nav a').forEach((a) => {
+    const selected = a.dataset.route === name;
+    a.classList.toggle('active', selected);
+    if (selected) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+  $('.rail-account').open = false;
   $('#page-title').textContent = PAGE_TITLES[name];
   document.title = `${PAGE_TITLES[name]} · Freight Dispatch`;
   const view = $('#view');
@@ -123,12 +125,11 @@ function connectLive() {
     source.addEventListener(type, (e) => {
       let evt;
       try { evt = JSON.parse(e.data); } catch { return; }
-      ctx.feed.unshift(evt);
-      ctx.feed.length = Math.min(ctx.feed.length, 80);
       if (type === 'clock') syncSim();
       try { current?.page.onEvent?.(evt); } catch (err) { console.error(err); }
     });
   }
+  return source;
 }
 
 async function refreshBadges() {
@@ -145,32 +146,80 @@ function setBadge(sel, n, title) {
   el.textContent = n > 99 ? '99+' : String(n);
   el.title = `${n} ${title}`;
   el.classList.toggle('hidden', !n);
+  const link = el.closest('a');
+  const label = PAGE_TITLES[link.dataset.route];
+  link.title = n ? `${label} · ${el.title}` : label;
+  link.setAttribute('aria-label', n ? `${label}, ${el.title}` : label);
 }
 
+function wireNavigation() {
+  const toggle = $('#nav-toggle');
+  const shell = $('.shell');
+  toggle.addEventListener('click', () => {
+    const expanded = shell.classList.toggle('nav-expanded');
+    const label = expanded ? 'Collapse navigation' : 'Expand navigation';
+    toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.setAttribute('aria-label', label);
+    toggle.title = label;
+  });
+  const finder = $('#nav-finder');
+  const input = $('#finder-search');
+  const list = $('#finder-results');
+  const empty = $('#finder-empty');
+  const entries = $$('#nav a').map(item => {
+    const link = document.createElement('a');
+    link.href = item.getAttribute('href');
+    link.textContent = PAGE_TITLES[item.dataset.route];
+    link.addEventListener('click', () => finder.close());
+    return link;
+  });
+  list.append(...entries);
+  function filterPages() {
+    const query = input.value.trim().toLowerCase();
+    for (const link of entries) link.hidden = !link.textContent.toLowerCase().includes(query);
+    empty.hidden = entries.some(link => !link.hidden);
+  }
+  function openFinder() {
+    if (finder.open) return;
+    input.value = '';
+    filterPages();
+    finder.showModal();
+    input.focus();
+  }
+  input.addEventListener('input', filterPages);
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter') entries.find(link => !link.hidden)?.click();
+  });
+  $('#nav-search').addEventListener('click', openFinder);
+  document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      openFinder();
+    }
+  });
+}
 
 async function boot() {
   try {
     const me = await get('/api/me');
-    if (me.role !== 'ADMIN') {
-      location.href = me.home || '/login.html';
-      return;
-    }
     $('#me').textContent = me.username;
+    $('#rail-avatar').textContent = me.username.slice(0, 2).toUpperCase();
   } catch {
     return;
   }
-  $('#logout').addEventListener('click', async () => {
-    try { await post('/api/auth/logout'); } finally { location.href = '/login.html'; }
-  });
   wireSimControls();
+  wireNavigation();
   await Promise.all([syncSim(), ctx.refreshHubs()]);
-  try { ctx.feed = await get('/api/events/recent'); } catch { ctx.feed = []; }
   tickClock();
   setInterval(tickClock, 1000);
   setInterval(syncSim, 15000);
   refreshBadges();
   setInterval(refreshBadges, 10000);
-  connectLive();
+  const live = connectLive();
+  $('#logout').addEventListener('click', async () => {
+    live.close();
+    try { await post('/api/auth/logout'); } finally { location.href = '/login.html'; }
+  });
   window.addEventListener('hashchange', route);
   route();
 }

@@ -12,42 +12,45 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
   <link rel="stylesheet" href="/css/app.css">
   <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/shipments.css">
+  <link rel="stylesheet" href="/css/fleet.css">
+  <link rel="stylesheet" href="/css/dispatch.css">
 </head>
 <body class="admin-page">
 <div class="shell">
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-mark">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
-      </div>
-      <div>
-        <div class="brand-name">Freight Dispatch</div>
-        <div class="brand-sub">Operations</div>
-      </div>
+  <aside class="sidebar admin-rail">
+    <div class="rail-head">
+      <button type="button" class="rail-toggle" id="nav-toggle" aria-controls="nav" aria-expanded="false" aria-label="Expand navigation" title="Expand navigation"><span class="rail-monogram" aria-hidden="true">FD</span></button>
+      <button type="button" class="rail-search" id="nav-search" aria-label="Find a page" title="Find a page (Ctrl+K)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4 4"/></svg><span class="rail-label">Find a page</span>
+      </button>
     </div>
     <nav class="nav" id="nav" aria-label="Operations navigation">
-      <a href="#/dashboard" data-route="dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg>Overview</a>
-      <a href="#/shipments" data-route="shipments">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Shipments<span class="badge-count hidden" id="nav-exceptions"></span></a>
-      <a href="#/dispatch" data-route="dispatch">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M4 12h16M4 18h7M17 3l3 3-3 3"/></svg>Dispatch<span class="badge-count hidden" id="nav-pending"></span></a>
-      <a href="#/fleet" data-route="fleet">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>Fleet</a>
-      <a href="#/hubs" data-route="hubs">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5a7 7 0 1114 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Hubs</a>
-      <a href="#/reports" data-route="reports">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Reports</a>
-      <a href="#/merchants" data-route="merchants">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9h18v11H3zM9 13h6"/></svg>Merchants</a>
-      <a href="#/accounts" data-route="accounts">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .6 3.2 2.6 3.7 5.5"/></svg>Accounts</a>
+      <div class="rail-group">
+        <span class="rail-group-title">Work</span>
+        <a href="#/dashboard" data-route="dashboard" aria-label="Overview" title="Overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg><span class="rail-label">Overview</span></a>
+        <a href="#/shipments" data-route="shipments" aria-label="Shipments" title="Shipments">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg><span class="rail-label">Shipments</span><span class="badge-count hidden" id="nav-exceptions"></span></a>
+        <a href="#/dispatch" data-route="dispatch" aria-label="Dispatch" title="Dispatch">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 6h10M4 12h16M4 18h7M17 3l3 3-3 3"/></svg><span class="rail-label">Dispatch</span><span class="badge-count hidden" id="nav-pending"></span></a>
+      </div>
+      <div class="rail-group">
+        <span class="rail-group-title">Network</span>
+        <a href="#/fleet" data-route="fleet" aria-label="Fleet" title="Fleet">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" stroke-linejoin="round"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg><span class="rail-label">Fleet</span></a>
+        <a href="#/hubs" data-route="hubs" aria-label="Hubs" title="Hubs">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 1114 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="rail-label">Hubs</span></a>
+      </div>
     </nav>
-    <div class="sidebar-foot">
-      <div><span class="live-dot" id="live-dot"></span><span id="live-text">Connecting…</span></div>
-      <div style="margin-top:8px">Admin <span class="user" id="me">-</span></div>
-      <button id="logout" type="button">Sign out</button>
-    </div>
+    <details class="rail-account">
+      <summary aria-label="Account menu" title="Account menu"><span class="rail-avatar" id="rail-avatar" aria-hidden="true">A</span><span class="rail-label">Account</span></summary>
+      <div class="rail-account-menu">
+        <strong id="me"></strong>
+        <div class="rail-live"><span class="live-dot" id="live-dot"></span><span id="live-text">Connecting…</span></div>
+        <button class="btn small" id="logout" type="button">Sign out</button>
+      </div>
+    </details>
   </aside>
   <div class="main">
     <header class="topbar">
@@ -70,6 +73,12 @@
     <main class="content" id="view"></main>
   </div>
 </div>
+<dialog class="rail-finder" id="nav-finder" aria-labelledby="finder-title">
+  <header><h2 id="finder-title">Find a page</h2><form method="dialog"><button type="submit" aria-label="Close">×</button></form></header>
+  <input class="input" id="finder-search" type="search" aria-label="Search pages" placeholder="Search pages" autocomplete="off">
+  <nav id="finder-results" aria-label="Matching pages"></nav>
+  <p id="finder-empty" hidden>No matching pages.</p>
+</dialog>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

@@ -14,13 +14,6 @@ export const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-export function dirColor(d) {
-  return getComputedStyle(document.documentElement).getPropertyValue(`--dir-${d}`).trim() || '#888';
-}
-export function cssVar(name) {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-}
-
 const ARROW = '<svg viewBox="0 0 10 10"><path d="M5 .8 8.4 8.6 5 6.6 1.6 8.6z" fill="currentColor"/></svg>';
 export function dirChip(d, label) {
   if (!d) return '';
@@ -34,12 +27,10 @@ export const lane = (o, d) => `<span class="lane">${esc(o.code)}<span class="arr
 const dtFmt = new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
 const hmFmt = new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, hour: '2-digit', minute: '2-digit', hour12: false });
 const fullFmt = new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
-const dayFmt = new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, month: 'numeric', day: 'numeric' });
 
 export const fmtTime = (v) => (v ? dtFmt.format(new Date(v)).replace(/\//g, '-') : '—');
 export const fmtHM = (v) => (v ? hmFmt.format(new Date(v)) : '—');
 export const fmtFull = (v) => (v ? fullFmt.format(new Date(v)) : '—');
-export const fmtDay = (isoDate) => dayFmt.format(new Date(`${isoDate}T12:00:00+08:00`));
 export const fmtNum = (n, digits = 0) => Number(n ?? 0).toLocaleString('en-MY', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 export const fmtKg = (n) => `${fmtNum(n, n < 10 ? 1 : 0)} kg`;
 export const fmtMoney = (n) => `RM ${fmtNum(n, 2)}`;
@@ -90,25 +81,6 @@ export function toast(message, level = 'info', ms = 3800) {
   box.appendChild(el);
   while (box.children.length > 4) box.firstChild.remove();
   setTimeout(() => el.remove(), ms);
-}
-
-let tipEl;
-export function showTip(html, x, y) {
-  if (!tipEl) {
-    tipEl = document.createElement('div');
-    tipEl.className = 'tooltip';
-    document.body.appendChild(tipEl);
-  }
-  tipEl.innerHTML = html;
-  tipEl.style.display = 'block';
-  const r = tipEl.getBoundingClientRect();
-  const left = Math.min(x + 14, window.innerWidth - r.width - 8);
-  const top = y + 14 + r.height > window.innerHeight ? y - r.height - 10 : y + 14;
-  tipEl.style.left = `${Math.max(8, left)}px`;
-  tipEl.style.top = `${Math.max(8, top)}px`;
-}
-export function hideTip() {
-  if (tipEl) tipEl.style.display = 'none';
 }
 
 function openLayer({ kind, title, body, foot = '', onMount }) {
@@ -189,17 +161,3 @@ export const VEHICLE_SVG = {
   road: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M2 6h12v10H2zM14 9h4l4 4v3h-8z"/></svg>',
   air: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>'
 };
-
-const STEPS = ['Order placed', 'In transit', 'At destination hub', 'Out for delivery', 'Delivered'];
-const STEP_OF = {
-  CREATED: 0, ASSIGNED: 0, IN_TRANSIT: 1, AT_TRANSFER: 1, ARRIVED_HUB: 2, OUT_FOR_DELIVERY: 3, DELIVERED: 4
-};
-
-export function stepper(status, atDestination = false) {
-  if (status === 'CANCELLED') return '<p class="muted" style="margin:4px 0 12px">Shipment cancelled</p>';
-  const problem = status === 'EXCEPTION';
-  const now = problem ? (atDestination ? 3 : 1) : (STEP_OF[status] ?? 0);
-  return `<div class="stepper${problem ? ' problem' : ''}" role="list">${STEPS.map((label, i) =>
-    `<div role="listitem" class="step${i < now || (i === now && status === 'DELIVERED') ? ' done' : ''}${i === now ? ' now' : ''}"><i></i>${
-      i === now && problem ? 'Exception' : label}</div>`).join('')}</div>`;
-}

@@ -29,13 +29,16 @@ public class AccountBootstrap implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        tx.executeWithoutResult(status -> users.findForLogin(admin.username()).ifPresentOrElse(
+        tx.executeWithoutResult(status -> users.findByUsernameIgnoreCase(admin.username()).ifPresentOrElse(
                 existing -> {
+                    if (!existing.isAdministrator()) {
+                        throw new IllegalStateException("ADMIN_USERNAME already belongs to a non-administrator account");
+                    }
                     if (!encoder.matches(admin.password(), existing.getPasswordHash())) {
                         existing.changePassword(encoder.encode(admin.password()));
                     }
                 },
-                () -> users.save(new AppUser(admin.username(), encoder.encode(admin.password()), Role.ADMIN,
-                        "System administrator", null, null, clock.instant()))));
+                () -> users.save(new AppUser(admin.username(), encoder.encode(admin.password()),
+                        "System administrator", clock.instant()))));
     }
 }

@@ -16,7 +16,10 @@ public interface MerchantRepository extends JpaRepository<Merchant, Long> {
     @Query("select m from Merchant m join fetch m.defaultHub where m.id = :id")
     Optional<Merchant> findWithHub(@Param("id") long id);
 
-    boolean existsByNameIgnoreCase(String name);
+    @Query("""
+            select new com.example.logistics.merchant.MerchantView(m.id, m.code, m.name, m.active)
+            from Merchant m order by m.id""")
+    List<MerchantView> findShipmentOptions();
 
     @Query("select coalesce(max(m.id), 0) from Merchant m")
     long maxId();

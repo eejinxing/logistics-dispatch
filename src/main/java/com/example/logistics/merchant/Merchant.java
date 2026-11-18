@@ -53,10 +53,6 @@ public class Merchant {
         this.createdAt = createdAt;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
     public Long getId() {
         return id;
     }
@@ -69,23 +65,11 @@ public class Merchant {
         return name;
     }
 
-    public String getContactName() {
-        return contactName;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
     public Hub getDefaultHub() {
         return defaultHub;
     }
 
     public boolean isActive() {
         return active;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
     }
 }

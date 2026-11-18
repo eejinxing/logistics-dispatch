@@ -11,6 +11,7 @@ import com.example.logistics.hub.HubRepository;
 import com.example.logistics.live.LiveEvent;
 import com.example.logistics.live.LiveEventHub;
 import com.example.logistics.simulation.SimulationClock;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.LocalDate;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -53,7 +55,11 @@ public class VehicleService {
             @Min(value = 100, message = "Capacity must be at least 100 kg") Integer capacityKg,
             @NotBlank(message = "Enter a driver name") @Size(max = 60) String driverName,
             @Size(max = 30) String driverPhone,
-            @NotNull(message = "Select the current hub") Long hubId) {
+            @NotNull(message = "Select the current hub") Long hubId,
+            Boolean refrigerated,
+            LocalDate nextServiceOn,
+            @Min(0) @Max(10) Integer fuelScore,
+            @Size(max = 12) List<@NotBlank @Size(max = 60) String> reliefDrivers) {
     }
 
     @Transactional(readOnly = true)
@@ -75,8 +81,16 @@ public class VehicleService {
         Hub hub = hubs.findById(request.hubId())
                 .orElseThrow(() -> new NotFoundException("Hub not found: " + request.hubId()));
         int capacity = request.capacityKg() == null ? request.type().defaultCapacityKg() : request.capacityKg();
-        Vehicle vehicle = vehicles.save(new Vehicle(plate, request.type(), capacity, request.driverName().trim(),
-                request.driverPhone(), hub));
+        Vehicle vehicle = new Vehicle(plate, request.type(), capacity, request.driverName().trim(),
+                request.driverPhone(), hub);
+        vehicle.setFleetDetails(Boolean.TRUE.equals(request.refrigerated()), request.nextServiceOn(), request.fuelScore());
+        if (request.reliefDrivers() != null) {
+            List<DriverAssignment> relief = request.reliefDrivers().stream().map(String::trim)
+                    .filter(name -> !name.equalsIgnoreCase(vehicle.getDriverName())).distinct()
+                    .map(name -> new DriverAssignment(name, null)).toList();
+            vehicle.setDriverRoster(null, relief);
+        }
+        vehicles.save(vehicle);
         live.publishAfterCommit(LiveEvent.info("fleet", "Vehicle added: " + plate + " (" + request.type().label() + ") @ "
                 + hub.getCode(), Map.of("plateNo", plate), clock.instant()));
         return VehicleView.from(vehicle, null);

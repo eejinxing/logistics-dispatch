@@ -1,8 +1,10 @@
 # Freight Dispatch
 
-Freight Dispatch is a Java 21 and Spring Boot application for shipping, dispatch, fleet management, and parcel tracking across Malaysia. It includes an operations dashboard, a merchant portal, and a recipient portal.
+Freight Dispatch is a Java 21 and Spring Boot operations console for shipping, dispatch, fleet management, and parcel tracking across Malaysia. Access requires an administrator account.
 
 The local simulation seeds 12 hubs, a fleet of road vehicles and cargo aircraft, and sample shipments. It can create orders, dispatch vehicles, and update trip positions as the simulation clock advances.
+
+The demo includes assigned drivers, vehicle features, service dates, and example fuel scores. In Fleet, operators can enter available details when adding a vehicle. The dashboard classifies road vehicles with at least 5,000 kg of payload capacity as heavy.
 
 ## Run locally in Eclipse
 
@@ -11,7 +13,7 @@ The local simulation seeds 12 hubs, a fleet of road vehicles and cargo aircraft,
 3. Right-click the class and select **Run As → Java Application**. Spring Tools users can select **Run As → Spring Boot App**.
 4. Once the console shows `Started LogisticsApplication`, open [the local application](http://localhost:8080).
 
-The local administrator account is `admin` with password `admin123`. The demo merchant and recipient accounts use `merchant` and `customer`. Their default password is `demo123`. These defaults are for local development. Set `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `DEMO_PASSWORD` for other environments.
+The local administrator account is `admin` with password `admin123`. These defaults are for local development. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` for other environments.
 
 If Eclipse only offers **Run Configurations**, verify that the file sits under the imported Maven project's `src/main/java` source folder. The application uses an in-memory H2 database, so restarting it resets the demo data.
 
@@ -23,9 +25,6 @@ If Eclipse only offers **Run Configurations**, verify that the file sits under t
 | Shipments | Quotes, order creation, filters, tracking history, exception handling, delivery confirmation, and CSV export |
 | Dispatch | Manual dispatch, automatic load consolidation, empty vehicle relocation, and active trip progress |
 | Fleet and hubs | Vehicle availability and maintenance, vehicle and hub registration, and inbound and outbound shipment counts |
-| Reports | Shipment volumes, revenue, on-time delivery, and freight by direction and hub |
-| Merchant portal | Quotes, shipment creation, tracking, and business profile |
-| Recipient portal | Parcel lookup and live tracking for shipments linked to a verified mobile number |
 
 ## Dispatch rules
 
@@ -48,4 +47,4 @@ The dashboard receives live events from `/api/live`. The frontend sends the `X-X
 
 ## Map data
 
-The map uses [OpenStreetMap](https://www.openstreetmap.org/copyright) tiles and [Natural Earth](https://www.naturalearthdata.com/) boundary data. Base tiles need a network connection. Boundary data and simplified freight route geometry are included in the application.
+The map uses [EOxCloudless](https://cloudless.eox.at/) satellite imagery with [OpenStreetMap](https://www.openstreetmap.org/copyright) fallback tiles. Tiles need a network connection. [Natural Earth](https://www.naturalearthdata.com/) boundary data and simplified freight route geometry are included in the application.

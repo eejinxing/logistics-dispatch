@@ -6,17 +6,17 @@ const NODES = {
 };
 
 export const CORRIDORS = [
-  { from: 'AOR', to: 'PEN', name: 'North–South Expressway · North', via: [[5.85, 100.47], [5.55, 100.47]], label: [5.82, 100.47] },
-  { from: 'PEN', to: 'IPH', name: 'North–South Expressway · E1', via: [[5.38, 100.48], [5.12, 100.57], [4.83, 100.75]], label: [4.96, 100.65] },
-  { from: 'IPH', to: 'KUL', name: 'North–South Expressway · Central', via: [[4.39, 101.17], [4.06, 101.27], [3.69, 101.50], [3.37, 101.57]], label: [3.85, 101.37] },
-  { from: 'KUL', to: 'SRB', name: 'North–South Expressway · E2', via: [[2.98, 101.75], [2.82, 101.84]], label: [2.89, 101.82] },
-  { from: 'SRB', to: 'MKZ', name: 'North–South Expressway · South', via: [[2.54, 102.05], [2.37, 102.20]], label: [2.44, 102.12] },
-  { from: 'MKZ', to: 'JHB', name: 'North–South Expressway · E2', via: [[2.30, 102.44], [2.12, 102.76], [1.92, 103.06], [1.68, 103.47]], label: [1.97, 103.00] },
-  { from: 'KUL', to: 'KUA', name: 'East Coast Expressway · E8', via: [[3.33, 101.76], [3.39, 101.91], [3.32, 102.15], [3.48, 102.43], [3.62, 102.83]], label: [3.43, 102.36] },
-  { from: 'KUA', to: 'TGG', name: 'East Coast Expressway · E8', via: [[4.05, 103.32], [4.40, 103.39], [4.72, 103.25], [5.02, 103.12]], label: [4.65, 103.30] },
-  { from: 'TGG', to: 'KBR', name: 'East Coast Highway', via: [[5.56, 102.94], [5.77, 102.63], [5.98, 102.36]], label: [5.76, 102.65] },
-  { from: 'AOR', to: 'KBR', name: 'East–West Highway · FT4', via: [[5.80, 100.60], [5.55, 100.89], [5.55, 101.33], [5.69, 101.74], [5.88, 102.04]], label: [5.56, 101.42] },
-  { from: 'KCH', to: 'BKI', name: 'Pan Borneo Highway', via: [[1.52, 110.77], [1.93, 111.30], [2.32, 111.75], [2.80, 112.12], [3.17, 113.03], [3.62, 113.43], [4.15, 113.99], [4.49, 114.25], [4.79, 114.89], [5.06, 115.40], [5.51, 115.60]], label: [3.18, 112.98] }
+  { from: 'AOR', to: 'PEN', via: [[5.85, 100.47], [5.55, 100.47]] },
+  { from: 'PEN', to: 'IPH', via: [[5.38, 100.48], [5.12, 100.57], [4.83, 100.75]] },
+  { from: 'IPH', to: 'KUL', via: [[4.39, 101.17], [4.06, 101.27], [3.69, 101.50], [3.37, 101.57]] },
+  { from: 'KUL', to: 'SRB', via: [[2.98, 101.75], [2.82, 101.84]] },
+  { from: 'SRB', to: 'MKZ', via: [[2.54, 102.05], [2.37, 102.20]] },
+  { from: 'MKZ', to: 'JHB', via: [[2.30, 102.44], [2.12, 102.76], [1.92, 103.06], [1.68, 103.47]] },
+  { from: 'KUL', to: 'KUA', via: [[3.33, 101.76], [3.39, 101.91], [3.32, 102.15], [3.48, 102.43], [3.62, 102.83]] },
+  { from: 'KUA', to: 'TGG', via: [[4.05, 103.32], [4.40, 103.39], [4.72, 103.25], [5.02, 103.12]] },
+  { from: 'TGG', to: 'KBR', via: [[5.56, 102.94], [5.77, 102.63], [5.98, 102.36]] },
+  { from: 'AOR', to: 'KBR', via: [[5.80, 100.60], [5.55, 100.89], [5.55, 101.33], [5.69, 101.74], [5.88, 102.04]] },
+  { from: 'KCH', to: 'BKI', via: [[1.52, 110.77], [1.93, 111.30], [2.32, 111.75], [2.80, 112.12], [3.17, 113.03], [3.62, 113.43], [4.15, 113.99], [4.49, 114.25], [4.79, 114.89], [5.06, 115.40], [5.51, 115.60]] }
 ].map((edge) => ({ ...edge, key: `${edge.from}-${edge.to}`, points: [NODES[edge.from], ...edge.via, NODES[edge.to]] }));
 
 function distance(a, b) {
@@ -47,7 +47,7 @@ export function freightRoute(origin, destination, air = origin.landmass !== dest
       for (const step of item.steps) points.push(...(step.reverse ? [...step.edge.points].reverse() : step.edge.points).slice(points.length ? 1 : 0));
       points[0] = a;
       points[points.length - 1] = b;
-      return { air: false, points, edges: item.steps.map((step) => step.edge.key), reversedEdges: item.steps.filter((step) => step.reverse).map((step) => step.edge.key) };
+      return { air: false, points, edges: item.steps.map((step) => step.edge.key) };
     }
     for (const edge of CORRIDORS) {
       const reverse = edge.to === item.code;

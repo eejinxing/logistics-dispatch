@@ -73,14 +73,6 @@ public class ShipmentService {
                 request.priorityOrDefault());
     }
 
-    @Transactional
-    public ShipmentView createForMerchant(long merchantId, MerchantShipmentRequest request) {
-        Merchant merchant = activeMerchant(merchantId);
-        Hub origin = request.originId() == null ? merchant.getDefaultHub() : hub(request.originId());
-        return book(origin, hub(request.destinationId()), merchant.getName(), merchant, request.receiverName(),
-                request.receiverPhone(), request.receiverAddress(), request.weightKg(), request.priorityOrDefault());
-    }
-
     private ShipmentView book(Hub origin, Hub destination, String sender, Merchant merchant, String receiverName,
                               String receiverPhone, String receiverAddress, double weightKg, Priority priority) {
         ensureDifferent(origin, destination);
@@ -102,29 +94,13 @@ public class ShipmentService {
         Instant now = clock.instant();
         PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 200),
                 Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
-        return PageView.of(shipments.findAll(filter.toSpecification(now), pageable), s -> ShipmentView.from(s, now));
+        return PageView.of(shipments.findAll(filter.toSpecification(now, clock.getZone()), pageable),
+                s -> ShipmentView.from(s, now));
     }
 
     @Transactional(readOnly = true)
     public ShipmentDetail detail(String trackingNo) {
         return detailOf(byTrackingNo(trackingNo));
-    }
-
-    @Transactional(readOnly = true)
-    public ShipmentDetail detailForMerchant(long merchantId, String trackingNo) {
-        Shipment s = byTrackingNo(trackingNo);
-        if (!s.belongsTo(merchantId)) {
-            throw new NotFoundException("Shipment not found: " + trackingNo);
-        }
-        return detailOf(s);
-    }
-
-    public ShipmentView cancelForMerchant(long merchantId, long id, String reason) {
-        Boolean owned = tx.execute(status -> shipments.findById(id).map(s -> s.belongsTo(merchantId)).orElse(false));
-        if (!Boolean.TRUE.equals(owned)) {
-            throw new NotFoundException("Shipment not found: " + id);
-        }
-        return cancel(id, reason);
     }
 
     private ShipmentDetail detailOf(Shipment s) {
