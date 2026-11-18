@@ -1,8 +1,12 @@
 import { freightRoute, pointOnRoute } from './map-network.js';
 import { satelliteTiles, streetTiles } from './map-tiles.js';
-import { esc } from './ui.js';
+import { esc, VEHICLE_SVG } from './ui.js';
 
 const MALAYSIA = [[.65, 99.1], [7.5, 119.2]];
+const ROUTE_STROKE = '#1a1a1a';
+const VAN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 17V6h13l4 4 3 3v4h-4M7 17h7M14 7v5h6M2 17h2"/><circle cx="5.5" cy="17.5" r="1.5"/><circle cx="16" cy="17.5" r="1.5"/></svg>';
+const LORRY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 16V5h12v11M14 9h4l4 4v3h-3M2 16h3m3 0h8M16 10v3h5"/><circle cx="6.5" cy="17" r="1.5"/><circle cx="17.5" cy="17" r="1.5"/></svg>';
+const TRIP_ICONS = { VAN: VAN_ICON, LORRY: LORRY_ICON, TRAILER: LORRY_ICON, AIR_CARGO: VEHICLE_SVG.air };
 
 export class DispatchMap {
   constructor(el, onHubSelect) {
@@ -41,21 +45,29 @@ export class DispatchMap {
       this.pins.delete(id);
     }
     for (const [id, { origin, count }] of origins) {
-      const current = this.pins.get(id);
+      let current = this.pins.get(id);
       const selected = id === selectedOrigin;
       const label = `${origin.name} · ${count} outbound ${count === 1 ? 'result' : 'results'}`;
       if (current?.count === count && current.selected === selected) continue;
-      const icon = L.divIcon({
-        className: `dispatch-pin${selected ? ' is-selected' : ''}`,
-        html: `<span>${esc(origin.code)} <b>${count}</b></span>`,
-        iconSize: [60, 29], iconAnchor: [30, 29]
-      });
-      const marker = current?.marker ?? L.marker([origin.lat, origin.lng], { title: label })
-        .on('click', () => this.onHubSelect(origin.id)).addTo(this.map);
-      marker.options.title = label;
-      marker.setIcon(icon).setZIndexOffset(selected ? 450 : 0);
-      marker.getElement()?.setAttribute('aria-label', label);
-      this.pins.set(id, { marker, count, selected });
+      if (!current) {
+        const button = document.createElement('button');
+        const badge = document.createElement('b');
+        button.type = 'button';
+        button.append(origin.code, badge);
+        L.DomEvent.disableClickPropagation(button);
+        button.addEventListener('click', () => this.onHubSelect(id));
+        const icon = L.divIcon({ className: 'dispatch-pin', html: button, iconSize: [60, 29], iconAnchor: [30, 29] });
+        const marker = L.marker([origin.lat, origin.lng], { icon, keyboard: false }).addTo(this.map);
+        current = { marker, button, badge };
+        this.pins.set(id, current);
+      }
+      current.count = count;
+      current.selected = selected;
+      current.badge.textContent = count;
+      current.button.title = label;
+      current.button.setAttribute('aria-label', label);
+      current.marker.setZIndexOffset(selected ? 450 : 0);
+      current.marker.getElement()?.classList.toggle('is-selected', selected);
     }
   }
 
@@ -66,14 +78,19 @@ export class DispatchMap {
     if (!item) return;
     const dashed = item.air ?? item.vehicleType === 'AIR_CARGO';
     L.polyline(this.points, { color: '#fff', weight: 7, opacity: .94, interactive: false }).addTo(this.routes);
-    L.polyline(this.points, { color: '#1a1a1a', weight: 3, opacity: .95, dashArray: dashed ? '5 6' : null, interactive: false }).addTo(this.routes);
+    L.polyline(this.points, { color: ROUTE_STROKE, weight: 3, opacity: .95, dashArray: dashed ? '5 6' : null, interactive: false }).addTo(this.routes);
     L.circleMarker([item.destination.lat, item.destination.lng], {
-      radius: 6, color: '#181818', fillColor: '#fff', fillOpacity: 1, weight: 2
+      radius: 5, color: ROUTE_STROKE, fillColor: '#fff', fillOpacity: 1, weight: 2
     }).bindTooltip(esc(item.destination.code), { className: 'dispatch-destination', permanent: true, direction: 'top', offset: [0, -6] }).addTo(this.routes);
-    if (item.status) {
-      this.tripMarker = L.circleMarker(this.points[0], {
-        radius: 5, color: '#fff', fillColor: '#151515', fillOpacity: 1, weight: 2, interactive: false
-      }).addTo(this.routes);
+    const symbol = item.status ? TRIP_ICONS[item.vehicleType] : null;
+    if (symbol) {
+      const label = `${item.vehicleTypeLabel} · ${item.plateNo}`;
+      const icon = L.divIcon({
+        className: 'dispatch-trip-pin',
+        html: `<span role="img" aria-label="${esc(label)}">${symbol}</span>`,
+        iconSize: [31, 31], iconAnchor: [15, 15]
+      });
+      this.tripMarker = L.marker(this.points[0], { icon, title: label, keyboard: false, zIndexOffset: 800 }).addTo(this.routes);
     }
   }
 

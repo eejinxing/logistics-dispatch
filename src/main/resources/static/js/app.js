@@ -5,9 +5,10 @@ import shipments from './pages/shipments.js';
 import dispatch from './pages/dispatch.js';
 import fleet from './pages/fleet.js';
 import hubs from './pages/hubs.js';
+import reports from './pages/reports.js';
 
-const PAGES = { dashboard, shipments, dispatch, fleet, hubs };
-const PAGE_TITLES = { dashboard: dashboard.title, shipments: 'Shipments', dispatch: 'Dispatch', fleet: 'Fleet', hubs: 'Hubs' };
+const PAGES = { dashboard, shipments, dispatch, fleet, hubs, reports };
+const PAGE_TITLES = { dashboard: dashboard.title, shipments: 'Shipments', dispatch: 'Dispatch', fleet: 'Fleet', hubs: 'Hubs', reports: reports.title };
 const LIVE_TYPES = ['shipment', 'trip', 'alert', 'dispatch', 'clock', 'fleet'];
 const simDate = new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
@@ -49,7 +50,7 @@ async function route() {
   });
   $('.rail-account').open = false;
   $('#page-title').textContent = PAGE_TITLES[name];
-  document.title = `${PAGE_TITLES[name]} · Freight Dispatch`;
+  document.title = `${PAGE_TITLES[name]} · EJX Logistics`;
   const view = $('#view');
   view.innerHTML = '';
   if (changedPage) {

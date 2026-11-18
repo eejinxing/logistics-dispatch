@@ -88,6 +88,8 @@ table.shipment-table { min-width: 770px; }
 .shipment-table tbody td { padding-block: 7px; }
 .shipment-id { font: 700 12px var(--mono); }
 .shipment-col-id .badge { font-size: 10px; }
+.badge.espresso-badge { gap: 4px; padding-inline-start: 4px; background: var(--info-soft); color: var(--info); }
+.espresso-badge img { display: block; flex: none; }
 .shipment-statuses { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .shipment-statuses .badge { font-size: 11px; }
 .shipment-trip { display: grid; gap: 0; width: fit-content; }

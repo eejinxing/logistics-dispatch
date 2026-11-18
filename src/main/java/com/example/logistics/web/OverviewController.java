@@ -61,6 +61,11 @@ public class OverviewController {
         return reports.daily(days);
     }
 
+    @GetMapping("/api/reports/summary")
+    public ReportService.Comparison reportSummary(@RequestParam(defaultValue = "28") int days) {
+        return reports.comparison(days);
+    }
+
     @GetMapping("/api/reports/shipments.csv")
     public ResponseEntity<byte[]> exportCsv(@Valid @ModelAttribute ShipmentFilter filter) {
         byte[] body = reports.exportCsv(filter);

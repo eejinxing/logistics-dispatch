@@ -51,6 +51,9 @@ public class ReportService {
                               List<HubRow> hubs) {
     }
 
+    public record Comparison(DailyReport current, DailyReport previous) {
+    }
+
     public record Day(LocalDate date, long created, long delivered, long deliveredLate, BigDecimal revenue,
                       double onTimeRate) {
     }
@@ -67,24 +70,41 @@ public class ReportService {
         ZoneId zone = clock.getZone();
         Instant now = clock.instant();
         LocalDate today = now.atZone(zone).toLocalDate();
-        LocalDate first = today.minusDays(span - 1L);
-        Instant since = first.atStartOfDay(zone).toInstant();
+        List<Object[]> rows = shipments.reportRows(today.minusDays(span - 1L).atStartOfDay(zone).toInstant());
+        return aggregate(span, today, now, zone, rows, hubs.findAllByOrderByIdAsc());
+    }
 
+    @Transactional(readOnly = true)
+    public Comparison comparison(int days) {
+        int span = Math.clamp(days, 1, 31);
+        ZoneId zone = clock.getZone();
+        Instant now = clock.instant();
+        LocalDate today = now.atZone(zone).toLocalDate();
+        LocalDate previousEnd = today.minusDays(span);
+        List<Object[]> rows = shipments.reportRows(previousEnd.minusDays(span - 1L).atStartOfDay(zone).toInstant());
+        List<Hub> hubList = hubs.findAllByOrderByIdAsc();
+        return new Comparison(
+                aggregate(span, today, now, zone, rows, hubList),
+                aggregate(span, previousEnd, now, zone, rows, hubList));
+    }
+
+    private DailyReport aggregate(int span, LocalDate end, Instant now, ZoneId zone, List<Object[]> rows, List<Hub> hubList) {
+        LocalDate first = end.minusDays(span - 1L);
         Map<LocalDate, long[]> counts = new LinkedHashMap<>();
         Map<LocalDate, BigDecimal> revenue = new LinkedHashMap<>();
-        for (LocalDate d = first; !d.isAfter(today); d = d.plusDays(1)) {
+        for (LocalDate d = first; !d.isAfter(end); d = d.plusDays(1)) {
             counts.put(d, new long[3]);
             revenue.put(d, BigDecimal.ZERO);
         }
         Map<Direction, double[]> byDirection = new EnumMap<>(Direction.class);
         Map<Long, Object[]> byHub = new LinkedHashMap<>();
-        for (Hub h : hubs.findAllByOrderByIdAsc()) {
+        for (Hub h : hubList) {
             byHub.put(h.getId(), new Object[]{h, 0L, 0L, BigDecimal.ZERO});
         }
 
         long createdTotal = 0;
         double weightTotal = 0;
-        for (Object[] row : shipments.reportRows(since)) {
+        for (Object[] row : rows) {
             Instant createdAt = (Instant) row[0];
             BigDecimal price = (BigDecimal) row[1];
             ShipmentStatus status = (ShipmentStatus) row[2];
@@ -95,9 +115,10 @@ public class ReportService {
             Long destinationId = (Long) row[7];
             double weight = ((Number) row[8]).doubleValue();
 
-            if (!createdAt.isBefore(since) && status != ShipmentStatus.CANCELLED) {
-                LocalDate day = createdAt.atZone(zone).toLocalDate();
-                counts.get(day)[0]++;
+            LocalDate day = createdAt.atZone(zone).toLocalDate();
+            long[] createdOnDay = counts.get(day);
+            if (createdOnDay != null && !createdAt.isAfter(now) && status != ShipmentStatus.CANCELLED) {
+                createdOnDay[0]++;
                 revenue.merge(day, price, BigDecimal::add);
                 byDirection.computeIfAbsent(direction, k -> new double[2])[0]++;
                 byDirection.get(direction)[1] += weight;
@@ -113,7 +134,7 @@ public class ReportService {
                     d[2] = (Long) d[2] + 1;
                 }
             }
-            if (status == ShipmentStatus.DELIVERED && deliveredAt != null && !deliveredAt.isBefore(since)) {
+            if (status == ShipmentStatus.DELIVERED && deliveredAt != null && !deliveredAt.isAfter(now)) {
                 long[] c = counts.get(deliveredAt.atZone(zone).toLocalDate());
                 if (c != null) {
                     c[1]++;

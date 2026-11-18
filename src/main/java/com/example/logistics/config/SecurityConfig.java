@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(request -> request.getDispatcherType() == DispatcherType.ASYNC
                                 && "/api/live".equals(request.getServletPath())).permitAll()
-                        .requestMatchers("/login.html", "/css/**", "/favicon.svg", "/error",
+                        .requestMatchers("/login.html", "/css/**", "/favicon.svg", "/ejx-logistics.svg", "/error",
                                 "/actuator/health", "/actuator/health/**").permitAll()
                         .anyRequest().hasRole(ADMIN_ROLE))
                 .formLogin(form -> form

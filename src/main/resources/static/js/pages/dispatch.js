@@ -104,7 +104,8 @@ function renderList(current, items) {
 function renderWorkspace(current, { focusRoute = false } = {}) {
   const items = matchingItems(current);
   let selected = items.find(item => itemKey(item) === current.selected);
-  if (!selected && !current.detailsClosed) {
+  const routeRemoved = current.manual && !selected && !current.lanes.some(item => laneKey(item) === current.selected);
+  if (!selected && !current.detailsClosed && !routeRemoved) {
     selected = items[0];
     current.selected = selected ? itemKey(selected) : null;
     current.manual = false;
@@ -117,7 +118,7 @@ function renderWorkspace(current, { focusRoute = false } = {}) {
     $('[data-count]', tab).textContent = fmtNum(waiting ? current.lanes.length : current.trips.length);
   }
   renderList(current, items);
-  const displayed = current.detailsClosed ? null : selected;
+  const displayed = current.detailsClosed ? null : selected ?? (routeRemoved ? current.displayed : null);
   current.displayed = displayed;
   current.map?.setOrigins(items, displayed?.origin.id);
   const routeKey = displayed ? `${current.view}:${itemKey(displayed)}:${laneKey(displayed)}` : '';
@@ -126,11 +127,11 @@ function renderWorkspace(current, { focusRoute = false } = {}) {
     current.map?.showRoute(displayed);
   }
   if (focusRoute) current.map?.focusRoute();
-  renderDetail(current, displayed);
+  renderDetail(current, displayed, routeRemoved);
   updateProgress();
 }
 
-function renderDetail(current, item) {
+function renderDetail(current, item, routeRemoved = false) {
   const detail = $('#dispatch-detail');
   detail.hidden = !item;
   if (!item) return;
@@ -141,7 +142,10 @@ function renderDetail(current, item) {
   summary.hidden = current.manual;
   pick.hidden = !current.manual;
   if (current.manual) {
-    if (pickSignature() !== current.pickSig) renderPick();
+    if (routeRemoved) {
+      current.pickSig = 'route-removed';
+      pick.innerHTML = '<p class="dispatch-route-note" role="status">This route is no longer awaiting dispatch. Choose another route to continue.</p>';
+    } else if (pickSignature() !== current.pickSig) renderPick();
     return;
   }
   const route = `${esc(item.origin.name)} → ${esc(item.destination.name)}`;
@@ -442,8 +446,8 @@ export default {
       } else if (event.target.closest('#close-dispatch-detail')) {
         if (current.manual) {
           current.manual = false;
-          renderDetail(current, current.displayed);
-          $('#show-pick').focus();
+          renderWorkspace(current);
+          $('#show-pick')?.focus();
         } else {
           current.detailsClosed = true;
           renderWorkspace(current);

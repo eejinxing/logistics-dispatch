@@ -133,7 +133,7 @@ function renderDirections(directions) {
   const center = 90, inner = 11, outer = 78;
   const radius = fraction => Math.sqrt(inner ** 2 + (outer ** 2 - inner ** 2) * fraction);
   const href = direction => shipmentHref({ direction, originId: state.originId });
-  const tone = direction => direction.length === 1 ? 'is-lime' : 'is-teal';
+  const tone = direction => direction.length === 1 ? 'is-cardinal' : 'is-intercardinal';
   const guides = [.25, .5, .75, 1].map(fraction =>
     `<circle cx="${center}" cy="${center}" r="${radius(fraction)}"/>`).join('');
   const sectors = compass.filter(d => d.count > 0).map(d => {

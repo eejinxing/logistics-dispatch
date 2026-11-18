@@ -175,6 +175,36 @@ class ApiTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    void reportComparesAdjacentPeriodsAndCountsShipmentsByEventDate() throws Exception {
+        mvc.perform(post("/api/shipments").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(shipmentJson(20)))
+                .andExpect(status().isCreated());
+        mvc.perform(post("/api/shipments").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(shipmentJson(35)))
+                .andExpect(status().isCreated());
+        LocalDate today = LocalDate.now(clock);
+        var todayStart = today.atStartOfDay(clock.getZone()).toOffsetDateTime();
+        jdbc.update("""
+                update shipments set created_at = ?, promised_by = ?, delivered_at = ?, status = 'DELIVERED'
+                where weight_kg = ?""", todayStart.minusDays(7), todayStart.minusHours(1), todayStart, 20.0);
+
+        mvc.perform(get("/api/reports/summary").param("days", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.current.days", hasSize(7)))
+                .andExpect(jsonPath("$.previous.days", hasSize(7)))
+                .andExpect(jsonPath("$.current.days[0].date").value(today.minusDays(6).toString()))
+                .andExpect(jsonPath("$.previous.days[6].date").value(today.minusDays(7).toString()))
+                .andExpect(jsonPath("$.current.totals.created").value(1))
+                .andExpect(jsonPath("$.previous.totals.created").value(1))
+                .andExpect(jsonPath("$.current.totals.avgWeightKg").value(35.0))
+                .andExpect(jsonPath("$.previous.totals.avgWeightKg").value(20.0))
+                .andExpect(jsonPath("$.current.totals.delivered").value(1))
+                .andExpect(jsonPath("$.current.days[6].deliveredLate").value(1))
+                .andExpect(jsonPath("$.previous.totals.delivered").value(0))
+                .andExpect(jsonPath("$.current.hubs[0].code").value("KUL"))
+                .andExpect(jsonPath("$.current.hubs[0].outbound").value(1));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void dashboardAggregatesInParallelAndReturnsAllEightDirections() throws Exception {
         mvc.perform(post("/api/shipments").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(shipmentJson(20)))
                 .andExpect(status().isCreated());

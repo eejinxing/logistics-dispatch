@@ -145,7 +145,7 @@
 .dispatch-map-tools button:hover, .dispatch-map-controls button:hover, .dispatch-close:hover { background: var(--surface-3); }
 .dispatch-map-tools button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 .dispatch-pin { display: grid; place-items: start center; cursor: pointer; }
-.dispatch-pin > span {
+.dispatch-pin > button {
   position: relative;
   display: flex;
   align-items: center;
@@ -159,11 +159,24 @@
   color: #fff;
   font: 650 11px var(--font);
   white-space: nowrap;
+  cursor: pointer;
 }
-.dispatch-pin > span::after { position: absolute; bottom: -6px; left: calc(50% - 1px); width: 3px; height: 3px; border-radius: 50%; background: #171717; content: ""; }
+.dispatch-pin > button::after { position: absolute; bottom: -6px; left: calc(50% - 1px); width: 3px; height: 3px; border-radius: 50%; background: #171717; content: ""; }
 .dispatch-pin b { padding: 1px 4px; border-radius: 8px; background: #fff; color: #181818; font-size: 10px; }
-.dispatch-pin.is-selected > span { border-color: #171717; background: #fff; color: #171717; }
+.dispatch-pin.is-selected > button { border-color: #171717; background: #fff; color: #171717; }
 .dispatch-pin.is-selected b { background: #171717; color: #fff; }
+.dispatch-trip-pin > span {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #171717;
+  color: #fff;
+  box-shadow: 0 2px 5px #0005;
+}
+.dispatch-trip-pin svg { width: 17px; height: 17px; }
 .dispatch-destination { font-size: 11px; font-weight: 700; }
 .dispatch-map-credit { position: absolute; z-index: 505; right: 3px; bottom: 2px; padding: 1px 4px; background: #fffd; color: #333; font-size: 10px; }
 .dispatch-map-credit a { color: inherit; text-decoration: underline; }

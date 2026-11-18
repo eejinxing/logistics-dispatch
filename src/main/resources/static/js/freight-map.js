@@ -4,7 +4,7 @@ import { satelliteTiles } from './map-tiles.js';
 import { hubName } from './overview-labels.js';
 
 const NATIONAL = [[.65, 99.1], [7.5, 119.2]];
-const ROUTE_COLORS = { road: '#ebf4eb', busy: '#fff', air: '#d9e7ee' };
+const ROUTE_COLORS = { road: '#e9e9e9', busy: '#fff', air: '#d0d0d0' };
 const ICONS = {
   hub: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10l8-6 8 6v10H4zM9 20v-7h6v7M2 10l10-8 10 8"/></svg>'
 };
@@ -57,7 +57,7 @@ export class FreightMap {
       if (this.destroyed) return;
       L.geoJSON(geo, {
         pane: 'country', interactive: false,
-        style: { color: '#c2d0c6', opacity: .3, weight: .8, dashArray: '2 4', fillColor: '#537465', fillOpacity: .13 }
+        style: { color: '#c9c9c9', opacity: .3, weight: .8, dashArray: '2 4', fillColor: '#6a6a6a', fillOpacity: .13 }
       }).addTo(this.baseLayer);
     }).catch((error) => { if (error.name !== 'AbortError' && !this.destroyed) console.warn('Map boundary:', error.message); });
     this.fitScene();
@@ -78,7 +78,7 @@ export class FreightMap {
 
   drawBackbone() {
     for (const edge of CORRIDORS) {
-      L.polyline(edge.points, { pane: 'network', color: '#a2b6a5', weight: 1, opacity: .52, interactive: false }).addTo(this.baseLayer);
+      L.polyline(edge.points, { pane: 'network', color: '#b0b0b0', weight: 1, opacity: .52, interactive: false }).addTo(this.baseLayer);
     }
   }
 

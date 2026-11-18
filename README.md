@@ -1,6 +1,6 @@
-# Freight Dispatch
+# EJX Logistics
 
-Freight Dispatch is a Java 21 and Spring Boot operations console for shipping, dispatch, fleet management, and parcel tracking across Malaysia. Access requires an administrator account.
+EJX Logistics is a Java 21 and Spring Boot operations console for shipping, dispatch, fleet management, and parcel tracking across Malaysia. Access requires an administrator account.
 
 The local simulation seeds 12 hubs, a fleet of road vehicles and cargo aircraft, and sample shipments. It can create orders, dispatch vehicles, and update trip positions as the simulation clock advances.
 
@@ -25,6 +25,7 @@ If Eclipse only offers **Run Configurations**, verify that the file sits under t
 | Shipments | Quotes, order creation, filters, tracking history, exception handling, delivery confirmation, and CSV export |
 | Dispatch | Manual dispatch, automatic load consolidation, empty vehicle relocation, and active trip progress |
 | Fleet and hubs | Vehicle availability and maintenance, vehicle and hub registration, and inbound and outbound shipment counts |
+| Reports | Shipment, delivery, and revenue trends compared with the prior period, with hub rankings and shipment directions |
 
 ## Dispatch rules
 

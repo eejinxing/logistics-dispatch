@@ -18,6 +18,7 @@ const COLUMNS = [
 ];
 const SHORT_DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: ZONE });
 const DATE_FILTER = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const ESPRESSO_BADGE = '<span class="badge plain espresso-badge"><img src="/favicon.svg" alt="" width="13" height="13">Espresso</span>';
 const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>';
 const STAGES = [
   ['Booked', '<path d="m3 7 9-4 9 4v10l-9 4-9-4zm0 0 9 4 9-4m-9 4v10"/>'],
@@ -59,7 +60,7 @@ function shipmentStages(status, statusLabel) {
 
 function shipmentRow(x, columns, now) {
   const fields = {
-    id: `<b class="shipment-id">${esc(x.trackingNo)}</b>${x.priority === 'EXPRESS' ? ' <span class="badge express plain">Express</span>' : ''}`,
+    id: `<b class="shipment-id">${esc(x.trackingNo)}</b> ${x.priority === 'EXPRESS' ? ESPRESSO_BADGE : ''}`,
     events: shipmentStages(x.status, x.statusLabel),
     status: `<span class="shipment-statuses">${badge(x.status, x.statusLabel)}${x.late
       ? `<span class="badge late" title="${x.status === 'DELIVERED' ? 'Delivered after the deadline' : `Overdue by ${fmtDuration(now - Date.parse(x.promisedBy))}`}">${x.status === 'DELIVERED' ? 'Late' : 'Overdue'}</span>` : ''}</span>`,
@@ -143,7 +144,7 @@ export async function openShipment(trackingNo, ctx, onChange) {
     if (x.status === 'OUT_FOR_DELIVERY') actions.push('<button class="btn primary" data-act="deliver">Confirm delivery</button>');
     body.innerHTML = `
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
-        ${badge(x.status, x.statusLabel)} ${x.priority === 'EXPRESS' ? '<span class="badge express">Express</span>' : '<span class="badge plain">Standard</span>'}
+        ${badge(x.status, x.statusLabel)} ${x.priority === 'EXPRESS' ? ESPRESSO_BADGE : '<span class="badge plain">Standard</span>'}
         ${x.late ? '<span class="badge late">Past the delivery deadline</span>' : ''}
         ${x.exceptionReason ? `<span class="badge st-EXCEPTION">${esc(x.exceptionReason)}</span>` : ''}
       </div>

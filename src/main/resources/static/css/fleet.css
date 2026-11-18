@@ -81,7 +81,6 @@
 .fleet-vehicle-copy small { color: var(--muted); font-size: 11px; }
 .fleet-vehicle-copy small:nth-of-type(2) { margin-top: 5px; }
 .fleet-vehicle-copy b { overflow-wrap: anywhere; font-size: 13px; line-height: 1.35; }
-.fleet-workspace .vehicle-illustration { filter: grayscale(1); }
 .fleet-vehicle .vehicle-illustration { width: 108%; mix-blend-mode: multiply; }
 .fleet-vehicle-foot { border-top: 1px solid var(--border); color: var(--muted); font-size: 11px; }
 .fleet-status {
