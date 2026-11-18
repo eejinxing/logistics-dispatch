@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My parcels · Freight Dispatch</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="portal-top">
+  <div class="brand" style="padding:0">
+    <div class="brand-mark">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">My parcels</div>
+      <div class="brand-sub">Parcels addressed to your mobile number</div>
+    </div>
+  </div>
+  <div class="who"><span>Hello, <b id="me">-</b></span><button id="logout" type="button">Sign out</button></div>
+</header>
+<main class="portal-main">
+  <section class="card">
+    <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div class="seg" id="tabs" role="group" aria-label="Filter">
+        <button data-tab="active" class="on">On the way</button><button data-tab="done">Delivered</button><button data-tab="all">All</button>
+      </div>
+      <span class="muted" id="summary"></span>
+      <span style="flex:1"></span>
+      <form id="lookup" class="filters" style="flex-wrap:nowrap">
+        <input class="input" id="lookup-no" placeholder="Track another parcel" maxlength="20" aria-label="Tracking number" style="width:220px">
+        <button class="btn" type="submit">Search</button>
+      </form>
+    </div>
+  </section>
+  <div class="parcel-layout">
+    <section class="card">
+      <div class="card-head"><h2>Parcels</h2></div>
+      <div class="card-body flush" style="padding-top:12px"><div class="parcel-list" id="list"><div class="empty">Loading…</div></div></div>
+    </section>
+    <section class="card" id="detail-card">
+      <div class="card-body" id="detail"><div class="empty">Select a parcel to see its latest location.</div></div>
+    </section>
+  </div>
+</main>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script type="module" src="/js/customer.js"></script>
+</body>
+</html>

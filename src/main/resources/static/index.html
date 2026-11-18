@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Freight Dispatch</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body class="admin-page">
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">Freight Dispatch</div>
+        <div class="brand-sub">Operations</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav" aria-label="Operations navigation">
+      <a href="#/dashboard" data-route="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg>Overview</a>
+      <a href="#/shipments" data-route="shipments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Shipments<span class="badge-count hidden" id="nav-exceptions"></span></a>
+      <a href="#/dispatch" data-route="dispatch">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M4 12h16M4 18h7M17 3l3 3-3 3"/></svg>Dispatch<span class="badge-count hidden" id="nav-pending"></span></a>
+      <a href="#/fleet" data-route="fleet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>Fleet</a>
+      <a href="#/hubs" data-route="hubs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5a7 7 0 1114 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Hubs</a>
+      <a href="#/reports" data-route="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Reports</a>
+      <a href="#/merchants" data-route="merchants">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9h18v11H3zM9 13h6"/></svg>Merchants</a>
+      <a href="#/accounts" data-route="accounts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .6 3.2 2.6 3.7 5.5"/></svg>Accounts</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div><span class="live-dot" id="live-dot"></span><span id="live-text">Connecting…</span></div>
+      <div style="margin-top:8px">Admin <span class="user" id="me">-</span></div>
+      <button id="logout" type="button">Sign out</button>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <h1 id="page-title">Overview</h1>
+      <div class="spacer"></div>
+      <div class="sim-clock" id="sim-controls">
+        <span class="sim-time" title="Simulation clock (Asia/Kuala_Lumpur)">Sim time <b id="sim-now">--</b></span>
+        <div class="seg" id="sim-speed" role="group" aria-label="Simulation speed">
+          <button data-pause="1" title="Pause" aria-label="Pause">⏸</button>
+          <button data-scale="60" title="1 second = 1 minute">1m/s</button>
+          <button data-scale="360" title="1 second = 6 minutes">6m/s</button>
+          <button data-scale="1800" title="1 second = 30 minutes">30m/s</button>
+          <button data-scale="3600" title="1 second = 1 hour">1h/s</button>
+        </div>
+        <button class="btn small" id="sim-skip" title="Advance the simulation by one hour">Skip +1h</button>
+        <label class="toggle"><input type="checkbox" id="sim-autogen">Auto orders</label>
+        <label class="toggle"><input type="checkbox" id="sim-autodispatch">Auto dispatch</label>
+      </div>
+    </header>
+    <main class="content" id="view"></main>
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

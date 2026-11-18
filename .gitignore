@@ -1,0 +1,10 @@
+target/
+bin/
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+*.cache.json

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Freight Dispatch</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<main class="login-page">
+  <div class="login-columns">
+    <form class="card login-card" id="login" autocomplete="on">
+      <div class="brand" style="padding:0">
+        <div class="brand-mark">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+        </div>
+        <div>
+          <div class="brand-name" style="color:var(--text)">Freight Dispatch</div>
+          <div class="brand-sub">Administrator · Merchant · Recipient</div>
+        </div>
+      </div>
+      <h1>Sign in</h1>
+      <div class="field">
+        <label for="username">Username</label>
+        <input class="input" id="username" name="username" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="err" id="err" role="alert"></div>
+      <button class="btn primary" type="submit" id="submit">Sign in</button>
+      <p class="text-2" style="margin:0;font-size:13px">New here? <a href="/register.html">Register with your mobile number</a> to see parcels addressed to you.</p>
+      <details class="demo-accounts">
+        <summary>Local demo accounts</summary>
+        <ul>
+          <li>Administrator: see application.yml under <code>app.admin</code></li>
+          <li>Merchant: <code>merchant</code> (Maju Jaya Trading)</li>
+          <li>Recipient: <code>customer</code> (Tan Mei Ling)</li>
+          <li>Merchant and recipient passwords are configured in <code>app.seed.demo-password</code></li>
+        </ul>
+      </details>
+    </form>
+
+    <section class="card login-card" aria-labelledby="track-title">
+      <h2 id="track-title" style="margin:0;font-size:17px">Track a parcel</h2>
+      <p class="text-2" style="margin:0;font-size:13px">Enter a tracking number to see where your parcel is.</p>
+      <form id="track" class="filters" style="flex-wrap:nowrap">
+        <input class="input" id="track-no" placeholder="e.g. MY261117000042" maxlength="20" style="flex:1;min-width:0" aria-label="Tracking number">
+        <button class="btn" type="submit">Search</button>
+      </form>
+      <div id="track-result"></div>
+    </section>
+  </div>
+</main>
+<script>
+  function csrfToken() {
+    const m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
+  const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kuala_Lumpur', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+  const time = (v) => (v ? fmt.format(new Date(v)).replace(/\//g, '-') : '—');
+
+  document.getElementById('login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = document.getElementById('err');
+    const btn = document.getElementById('submit');
+    err.textContent = '';
+    btn.disabled = true;
+    try {
+      const body = new URLSearchParams({
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+      });
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-XSRF-TOKEN': csrfToken() },
+        body,
+        credentials: 'same-origin'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        location.href = data.home || '/';
+        return;
+      }
+      let message = 'Sign-in failed';
+      try { message = (await res.json()).detail || message; } catch (ignored) { }
+      if (res.status === 403) message = 'Your session expired. Refresh the page and try again.';
+      err.textContent = message;
+    } catch (ex) {
+      err.textContent = 'Could not connect to the server.';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('track').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const out = document.getElementById('track-result');
+    const no = document.getElementById('track-no').value.trim();
+    if (!no) return;
+    out.innerHTML = '<p class="muted">Searching…</p>';
+    try {
+      const res = await fetch('/api/public/track/' + encodeURIComponent(no));
+      const data = await res.json();
+      if (!res.ok) {
+        out.innerHTML = `<p class="err">${esc(data.detail || 'Tracking lookup failed')}</p>`;
+        return;
+      }
+      const route = data.route.map((h) => esc(h.code)).join(' → ');
+      out.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 10px">
+          <span class="badge st-${esc(data.status)}">${esc(data.statusLabel)}</span>
+          <b>${esc(data.origin.name)} → ${esc(data.destination.name)}</b>
+          ${data.late ? '<span class="badge late">Overdue</span>' : ''}
+        </div>
+        <dl class="kv"><dt>Route</dt><dd>${route}</dd><dt>Current location</dt><dd>${esc(data.currentHub.name)}</dd>
+          <dt>Promised delivery</dt><dd>${time(data.promisedBy)}</dd>${data.deliveredAt ? `<dt>Delivered at</dt><dd>${time(data.deliveredAt)}</dd>` : ''}</dl>
+        <ul class="timeline" style="margin-top:14px">${[...data.events].reverse().map((ev, i) => `
+          <li class="${i === 0 ? 'current' : ''}"><div><b>${esc(ev.statusLabel)}</b> · ${esc(ev.location ?? '')}</div>
+          <div class="when">${time(ev.occurredAt)}</div></li>`).join('')}</ul>
+        <p class="muted" style="font-size:12px;margin:0">Sign in to your recipient account for full details and live location.</p>`;
+    } catch (ex) {
+      out.innerHTML = '<p class="err">Could not connect to the server.</p>';
+    }
+  });
+</script>
+</body>
+</html>

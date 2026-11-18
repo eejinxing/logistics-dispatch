@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create a recipient account · Freight Dispatch</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<main class="login-page">
+  <form class="card login-card" id="register" autocomplete="off" style="width:min(440px,100%)">
+    <h1>Create a recipient account</h1>
+    <p class="text-2" style="margin:0;font-size:13px">Parcels addressed to your mobile number will appear in your account. Enter one of their tracking numbers to verify your mobile number.</p>
+    <div class="field"><label for="displayName">Name</label><input class="input" id="displayName" maxlength="40" required></div>
+    <div class="field"><label for="phone">Mobile number</label><input class="input" id="phone" maxlength="30" placeholder="e.g. 012-345 6789" required></div>
+    <div class="field"><label for="trackingNo">Tracking number addressed to this mobile number</label><input class="input" id="trackingNo" maxlength="20" placeholder="MY…" required></div>
+    <div class="field"><label for="username">Username</label><input class="input" id="username" maxlength="30" pattern="[A-Za-z0-9_.\-]{3,30}" title="3-30 letters, digits, underscores, periods, or hyphens" required></div>
+    <div class="field"><label for="password">Password (at least 6 characters)</label><input class="input" id="password" type="password" minlength="6" maxlength="64" autocomplete="new-password" required></div>
+    <div class="err" id="err" role="alert"></div>
+    <button class="btn primary" type="submit" id="submit">Register and sign in</button>
+    <p class="text-2" style="margin:0;font-size:13px">Already have an account? <a href="/login.html">Sign in</a></p>
+  </form>
+</main>
+<script>
+  function csrfToken() {
+    const m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  const val = (id) => document.getElementById(id).value.trim();
+  document.getElementById('register').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = document.getElementById('err');
+    const btn = document.getElementById('submit');
+    err.textContent = '';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrfToken() },
+        body: JSON.stringify({ username: val('username'), password: document.getElementById('password').value,
+          displayName: val('displayName'), phone: val('phone'), trackingNo: val('trackingNo') }),
+        credentials: 'same-origin'
+      });
+      if (!res.ok) {
+        let message = 'Registration failed';
+        try { message = (await res.json()).detail || message; } catch (ignored) { }
+        err.textContent = res.status === 403 ? 'Your session expired. Refresh the page and try again.' : message;
+        return;
+      }
+      const login = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-XSRF-TOKEN': csrfToken() },
+        body: new URLSearchParams({ username: val('username'), password: document.getElementById('password').value }),
+        credentials: 'same-origin'
+      });
+      location.href = login.ok ? (await login.json()).home : '/login.html';
+    } catch (ex) {
+      err.textContent = 'Could not connect to the server.';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
