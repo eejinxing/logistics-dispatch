@@ -1,51 +1,47 @@
 # EJX Logistics
 
-EJX Logistics is a Java 21 and Spring Boot operations console for shipping, dispatch, fleet management, and parcel tracking across Malaysia. Access requires an administrator account.
-
-The local simulation seeds 12 hubs, a fleet of road vehicles and cargo aircraft, and sample shipments. It can create orders, dispatch vehicles, and update trip positions as the simulation clock advances.
-
-The demo includes assigned drivers, vehicle features, service dates, and example fuel scores. In Fleet, operators can enter available details when adding a vehicle. The dashboard classifies road vehicles with at least 5,000 kg of payload capacity as heavy.
+EJX Logistics is a dispatch console for shipments across Malaysia. It runs on Java 21, Spring Boot, and an in-memory H2 database.
 
 ## Run locally in Eclipse
 
-1. Use JDK 21 or later. Select **File → Import → Maven → Existing Maven Projects** and choose the directory containing `pom.xml`.
-2. Open `src/main/java/com/example/logistics/LogisticsApplication.java`.
-3. Right-click the class and select **Run As → Java Application**. Spring Tools users can select **Run As → Spring Boot App**.
-4. Once the console shows `Started LogisticsApplication`, open [the local application](http://localhost:8080).
+1. Set Eclipse to use JDK 21 or later. Go to **File → Import → Maven → Existing Maven Projects** and select the folder with `pom.xml`.
+2. Open `LogisticsApplication.java` under `src/main/java/com/example/logistics`.
+3. Right-click the class and choose **Run As → Java Application** or **Run As → Spring Boot App** if you have Spring Tools.
+4. Wait for `Started LogisticsApplication` in the console, then open [the local application](http://localhost:8080).
 
-The local administrator account is `admin` with password `admin123`. These defaults are for local development. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` for other environments.
+Sign in locally with `admin` and `admin123`. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` when running outside your local development environment.
 
-If Eclipse only offers **Run Configurations**, verify that the file sits under the imported Maven project's `src/main/java` source folder. The application uses an in-memory H2 database, so restarting it resets the demo data.
+If Eclipse only shows **Run Configurations**, check that you opened the class from the imported Maven project's `src/main/java` source folder.
 
-## Features
+## Try the demo
 
-| Area | Features |
-| --- | --- |
-| Overview | Malaysia freight map, shipment directions, top routes, operational metrics, pending shipments, and live trip tracking |
-| Shipments | Quotes, order creation, filters, tracking history, exception handling, delivery confirmation, and CSV export |
-| Dispatch | Manual dispatch, automatic load consolidation, empty vehicle relocation, and active trip progress |
-| Fleet and hubs | Vehicle availability and maintenance, vehicle and hub registration, and inbound and outbound shipment counts |
-| Reports | Shipment, delivery, and revenue trends compared with the prior period, with hub rankings and shipment directions |
+The app starts with 12 hubs, a fleet of road vehicles and cargo aircraft, and sample shipments. Use the clock at the top to pause the simulation, change its speed, or skip ahead an hour. **Auto orders** and **Auto dispatch** control what happens as time advances. Restarting the app resets the database and reloads the sample data.
+
+- Use **Overview** to watch trips on the map and review pending shipments or exceptions.
+- In **Shipments**, get a quote, book a shipment, check its tracking history, or export the filtered list as a CSV.
+- In **Dispatch**, choose a route and assign a vehicle by hand, run automatic dispatch, or track a trip already on the road.
+- Check vehicle availability, driver assignments, and maintenance in **Fleet**, or review inbound and outbound counts in **Hubs**.
+- Use **Reports** to compare the last 7, 14, or 28 days with the preceding period.
 
 ## Dispatch rules
 
-- Shipments with the same origin hub and next stop can share a vehicle. The default dispatch threshold is 60% capacity or three hours of waiting, reduced to 90 minutes for express shipments. Express shipments load first.
-- Cross-sea shipments connect by road and cargo aircraft through the configured gateway. Road vehicles stay within Peninsular Malaysia or East Malaysia. The default gateway is KUL.
-- When a hub needs a vehicle, the dispatcher can relocate an available vehicle from a nearby hub.
-- Standard delivery is 48 hours and express delivery is 24 hours. Air routes add 24 hours. Pricing starts at RM 10, adds a distance-based charge per kilogram, and applies express and air multipliers when applicable.
-- Shipment and vehicle changes use optimistic locking. Per-hub locks prevent concurrent dispatches from assigning the same shipment or vehicle twice.
+Shipments at the same hub that share a next stop can go on the same vehicle. By default, automatic dispatch looks for a load of at least 60% capacity or a shipment that has waited three hours. Express shipments load first and can trigger dispatch after 90 minutes. If a hub runs out of vehicles, an available vehicle can be moved from a nearby hub.
+
+Cargo aircraft handle cross-sea legs through the configured gateway, which defaults to KUL. Road vehicles stay within Peninsular Malaysia or East Malaysia. Standard delivery is quoted at 48 hours and express at 24 hours, with an extra 24 hours for routes that include air freight.
+
+Shipment and vehicle updates use optimistic locking. Dispatch also locks each hub while assigning shipments and vehicles to prevent double bookings.
 
 ## Configuration and tests
 
-Application settings live in `src/main/resources/application.yml`. Use `app.seed.enabled` and `app.simulation.enabled` to disable demo data and simulation. Dispatch thresholds live under `app.simulation`, and the air gateway is set by `app.routing.gateway`.
+Edit `src/main/resources/application.yml` to change the demo setup. Set `app.seed.enabled` or `app.simulation.enabled` to `false` to turn off sample data or the simulation. Dispatch thresholds are under `app.simulation`, and `app.routing.gateway` sets the air gateway.
+
+Run the Java and route tests from the project folder.
 
 ```sh
 mvn test
 node --test src/test/js/map-network.test.mjs
 ```
 
-The dashboard receives live events from `/api/live`. The frontend sends the `X-XSRF-TOKEN` header with the matching cookie value for write requests.
-
 ## Map data
 
-The map uses [EOxCloudless](https://cloudless.eox.at/) satellite imagery with [OpenStreetMap](https://www.openstreetmap.org/copyright) fallback tiles. Tiles need a network connection. [Natural Earth](https://www.naturalearthdata.com/) boundary data and simplified freight route geometry are included in the application.
+Map tiles need an internet connection. The app includes simplified freight routes and boundary data from [Natural Earth](https://www.naturalearthdata.com/). Satellite imagery comes from [EOxCloudless](https://cloudless.eox.at/), and street tiles come from [OpenStreetMap](https://www.openstreetmap.org/copyright).
